@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
+import android.accessibilityservice.AccessibilityServiceInfo
 
 /**
  * Check if Accessibility service is enabled and open system Accessibility settings.
@@ -15,7 +16,7 @@ class AccessibilityHelper(private val context: Context) {
         val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
             ?: return false
         val enabled = am.getEnabledAccessibilityServiceList(
-            android.view.accessibility.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+            AccessibilityServiceInfo.FEEDBACK_ALL_MASK
         ) ?: return false
         val packageName = context.packageName
         val serviceName = CachelyAccessibilityService::class.java.name

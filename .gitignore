@@ -1,6 +1,8 @@
 # Gradle
 .gradle/
 build/
+gradle-8.9/
+gradle-temp.zip
 
 # Android
 *.apk
