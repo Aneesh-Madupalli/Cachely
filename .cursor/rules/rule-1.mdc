@@ -1,0 +1,76 @@
+---
+alwaysApply: true
+---
+
+# 🧭 Cursor Rules – Cachely v1
+## AI Coding Guidelines & Guardrails
+
+**Project:** Cachely  
+**Platform:** Android  
+**Language:** Kotlin  
+**UI:** Jetpack Compose  
+**Architecture:** Lean MVVM  
+**Purpose:** Ensure safe, consistent, premium-quality AI-assisted development  
+
+---
+
+## 1. Purpose of This Document
+
+This document defines **strict rules for AI-assisted coding tools (Cursor)** when working on the Cachely codebase.
+
+The goals are to:
+- Preserve architectural integrity
+- Prevent over-engineering
+- Maintain Play Store & Accessibility compliance
+- Enforce premium iOS-like UI/UX quality
+- Avoid accidental scope creep
+
+Cursor must treat this document as **non-negotiable constraints**.
+
+---
+
+## 2. High-Level Project Intent (DO NOT VIOLATE)
+
+Cachely is:
+- A **minimal, premium cache cleaner**
+- Focused on **one core action**
+- Built for **trust, calmness, and safety**
+- Explicitly **not** a feature-rich cleaner app
+
+Cursor must **never introduce**:
+- Extra features
+- Background behavior
+- Analytics
+- Ads
+- Fake optimizations
+
+---
+
+## 3. Confirmed v1 Project Structure (LOCKED)
+
+Cursor **must not change or restructure folders** unless explicitly instructed.
+
+```text
+com.cachely.app
+│
+├── CachelyApplication.kt
+│
+├── accessibility/
+│   ├── CachelyAccessibilityService.kt
+│   └── AccessibilityHelper.kt
+│
+├── data/
+│   └── CacheCleaner.kt
+│
+├── ui/
+│   ├── HomeScreen.kt
+│   ├── HomeViewModel.kt
+│   ├── SettingsScreen.kt
+│   └── PermissionScreen.kt
+│
+├── navigation/
+│   └── NavGraph.kt
+│
+└── util/
+    ├── ByteFormatter.kt
+    └── TimeFormatter.kt
