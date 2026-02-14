@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cachely</string>
+    <string name="accessibility_service_description">Cachely uses this permission only to tap the \"Clear cache\" button on app info screens when you choose to clean cache. It does not read screen content, collect data, or run in the background. You can disable it anytime in Settings.</string>
+</resources>

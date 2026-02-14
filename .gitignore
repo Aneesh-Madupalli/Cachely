@@ -1,0 +1,52 @@
+# Gradle
+.gradle/
+build/
+
+# Android
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+local.properties
+*.hprof
+captures/
+.externalNativeBuild/
+.cxx/
+*.keystore
+!debug.keystore
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Kotlin
+*.kotlin_module
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Cursor / VS Code (optional; uncomment if you want to ignore)
+# .cursor/
+# .vscode/
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+*.swp
+*~
+.cache/
+
+# Secrets and env (if added later)
+.env
+.env.local
+*.jks
+secrets.properties

@@ -240,7 +240,7 @@ Accessibility is not a marketing feature.
 
 - Observe window changes  
 - Detect App Info screen  
-- Locate “Clear Cache” button  
+- Locate "Clear Cache" button  
 - Execute click action  
 - Navigate back safely  
 
@@ -351,7 +351,7 @@ data class HomeUiState(
 
 ### 12.2 TimeFormatter.kt
 
-- Relative time (e.g. “2 hours ago”)  
+- Relative time (e.g. "2 hours ago")  
 - No timers or background work  
 
 ---

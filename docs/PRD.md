@@ -31,7 +31,7 @@ Cachely aims to become the **most trusted, minimal, and premium cache cleaner on
 Most Android cleaner apps:
 - Contain fake features (RAM booster, CPU cooler, battery saver)
 - Abuse permissions and Accessibility
-- Show misleading “scanning” animations
+- Show misleading "scanning" animations
 - Consume significant storage and memory
 - Create fear-based UX to force permissions
 
@@ -141,7 +141,7 @@ Enable users to clean cache **immediately** with a single tap.
   - Last cleaned time
   - Assisted mode status (ON/OFF)
 - Trust indicator:
-  - “No ads • No trackers”
+  - "No ads • No trackers"
 
 ---
 
@@ -201,7 +201,7 @@ Android restricts silent cache clearing. Accessibility allows Cachely to **assis
 
 ### 8.2 Accessibility Capabilities
 - Open App Info screens
-- Locate “Clear Cache” button
+- Locate "Clear Cache" button
 - Trigger click action
 - Navigate back safely
 
@@ -223,7 +223,7 @@ Cachely **does NOT**:
 - Calm, premium UI
 - Clear explanation:
   - Why permission is needed
-  - What Cachely will and won’t do
+  - What Cachely will and won't do
 - Buttons:
   - Enable assisted mode
   - Not now

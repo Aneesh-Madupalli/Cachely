@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+# Cachely – Context Loading
+
+When working on this codebase, use these files to improve accuracy and speed:
+
+- **First:** [docs/context/CONTEXT.md](docs/context/CONTEXT.md) – Project summary, package map, key contracts, data flow, conventions, where to change what.
+- **Find a file:** [docs/context/CODEBASE.md](docs/context/CODEBASE.md) – Path → purpose → do not.
+- **Entry point for agents:** [AGENTS.md](AGENTS.md) – Points to CONTEXT, rules, TDD, UI_UX.
+
+Prefer CONTEXT.md and CODEBASE.md over re-scanning the repo for structure and contracts. Follow [.cursor/rules/rule-1.mdc](.cursor/rules/rule-1.mdc) for constraints.

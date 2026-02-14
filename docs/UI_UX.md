@@ -42,7 +42,7 @@ Cachely must **feel calm, safe, and professional**.
 
 ## 3. Design Goal
 
-> “Cachely should feel like an Apple-designed utility running on Android.”
+> "Cachely should feel like an Apple-designed utility running on Android."
 
 The user should feel:
 - Relaxed
@@ -118,7 +118,7 @@ The user should feel:
 
 ---
 
-## 6. Home Screen – “One Action, Zero Noise”
+## 6. Home Screen – "One Action, Zero Noise"
 
 ### Purpose
 Allow the user to clean cache **immediately** with absolute confidence.
