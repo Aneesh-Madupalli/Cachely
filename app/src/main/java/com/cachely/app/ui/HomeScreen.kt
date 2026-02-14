@@ -87,7 +87,7 @@ fun HomeScreen(
         Button(
             onClick = { viewModel.startCleaning() },
             enabled = !state.isCleaning,
-            modifier = Modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value },
+            modifier = Modifier.graphicsLayer(scaleX = scale.value, scaleY = scale.value),
             interactionSource = interactionSource
         ) {
             Text(if (state.isCleaning) "Cleaning…" else "Clean cache")
