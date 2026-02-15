@@ -3,6 +3,7 @@ package com.cachely.app.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -193,6 +194,48 @@ fun SettingsScreenContent(
                     ) {
                         Text(
                             text = "Configure",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            // Cache sizes (Usage Access)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Design.radiusMedium),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Design.spaceStandard),
+                    verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
+                ) {
+                    Text(
+                        text = "Cache sizes",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "To show approximate cache size per app, grant Usage Access. Otherwise sizes show as 0 B.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                try {
+                                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                                } catch (_: Exception) { }
+                            }
+                            .padding(vertical = Design.spaceSmall),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Grant Usage Access",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )

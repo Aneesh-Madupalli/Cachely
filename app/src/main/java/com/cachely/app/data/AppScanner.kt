@@ -1,14 +1,27 @@
 package com.cachely.app.data
 
+import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Environment
+import android.os.Process
+import android.os.UserHandle
+import android.os.storage.StorageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 /**
  * Fetches installed apps and builds app list with metadata.
- * Runs off main thread. Cache size is approximate (0 when not available).
+ * Runs off main thread.
+ *
+ * Cache size: Requires PACKAGE_USAGE_STATS (Usage Access). When not granted,
+ * all cache sizes are 0. Zero-cache filter is only applied when we can read stats.
+ *
+ * Package visibility (Android 11+): Manifest must declare <queries> so
+ * getInstalledApplications() returns more than a handful of apps.
  */
 class AppScanner(private val context: Context) {
 
@@ -17,11 +30,12 @@ class AppScanner(private val context: Context) {
         excludeZeroCache: Boolean = false
     ): List<AppCacheItem> = withContext(Dispatchers.Default) {
         val pm = context.packageManager
+        val canReadCache = hasUsageAccess()
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .map { info ->
                 val appName = info.loadLabel(pm)?.toString() ?: info.packageName
                 val isSystem = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                val cacheBytes = getApproxCacheSize(pm, info.packageName)
+                val cacheBytes = if (canReadCache) getApproxCacheSize(info.packageName) else 0L
                 AppCacheItem(
                     appName = appName,
                     packageName = info.packageName,
@@ -30,13 +44,47 @@ class AppScanner(private val context: Context) {
                 )
             }
             .filter { if (excludeSystemApps) !it.isSystemApp else true }
-            .filter { if (excludeZeroCache) it.approxCacheBytes > 0 else true }
+            // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone
+            .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0 else true }
             .sortedWith(compareByDescending<AppCacheItem> { it.approxCacheBytes }.thenBy { it.appName })
         apps
     }
 
-    /** Approximate cache size; returns 0 when not available (StorageStatsManager requires PACKAGE_USAGE_STATS for other apps). */
-    private fun getApproxCacheSize(pm: PackageManager, packageName: String): Long {
-        return 0L
+    /** True if app has Usage Access (required for StorageStatsManager for other packages). */
+    fun hasUsageAccess(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return false
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? android.app.AppOpsManager
+            ?: return false
+        @Suppress("DEPRECATION")
+        val mode = appOps.checkOpNoThrow(
+            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            context.packageName
+        )
+        return mode == android.app.AppOpsManager.MODE_ALLOWED
+    }
+
+    /**
+     * Approximate cache size via StorageStatsManager. Returns 0 when:
+     * - No Usage Access, or
+     * - API < 26, or
+     * - Query throws (OEM / permission).
+     */
+    private fun getApproxCacheSize(packageName: String): Long {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
+        return try {
+            val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE)
+                as? StorageStatsManager ?: return 0L
+            val storageManager = context.getSystemService(Context.STORAGE_SERVICE)
+                as? StorageManager ?: return 0L
+            val volume = storageManager.getStorageVolume(Environment.getDataDirectory()) ?: return 0L
+            val uuidStr = volume.uuid ?: return 0L
+            val uuid = UUID.fromString(uuidStr)
+            val userHandle = UserHandle.getUserHandleForUid(Process.myUid())
+            val stats = storageStatsManager.queryStatsForPackage(uuid, packageName, userHandle)
+            stats.cacheBytes
+        } catch (_: Exception) {
+            0L
+        }
     }
 }
