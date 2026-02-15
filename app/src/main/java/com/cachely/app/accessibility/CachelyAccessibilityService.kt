@@ -7,39 +7,42 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
- * Two-phase automation on Settings (App Info) screens:
- * 1) If we see "Storage" / "Storage & cache" → click it to open storage screen.
- * 2) If we see "Clear cache" → click it, wait, back, then notify cleared.
+ * State-gated automation on Settings (App Info) screens:
+ * - EXPECT_STORAGE: on App Info; only click "Storage" / "Storage & cache" (skip first Storage after notify to avoid same app).
+ * - EXPECT_CLEAR_CACHE: on Storage screen; only click "Clear cache", then back + notify.
  *
  * Guard: Automation runs ONLY when CleanCoordinator.isSessionActive() is true (session
- * started by user tapping "Clean Selected"). When app is closed or user didn't start a clean,
- * no session → we do nothing. Prevents rogue automation when user manually opens App Info.
+ * started by user tapping "Clean Selected"). Prevents rogue automation when user manually opens App Info.
  *
  * Does not read or store screen content. User-initiated only. Compliant with Play policy.
  */
 class CachelyAccessibilityService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
-    private var lastNotifyAtMs = 0L
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         if (event.packageName?.toString() != "com.android.settings") return
         if (!CleanCoordinator.isSessionActive()) return
-        if (System.currentTimeMillis() - lastNotifyAtMs < NOTIFY_COOLDOWN_MS) return
         val root = event.source ?: rootInActiveWindow ?: return
         try {
-            // Phase 2: We're on Storage screen — find and click "Clear cache", then back + notify
-            if (findAndClickClearCache(root)) {
-                handler.postDelayed({
-                    performGlobalAction(GLOBAL_ACTION_BACK)
-                    lastNotifyAtMs = System.currentTimeMillis()
-                    CleanCoordinator.notifyCleared()
-                }, CLEAR_CACHE_SETTLE_MS)
-                return
+            when (CleanCoordinator.getPhase()) {
+                CleanCoordinator.CleaningPhase.EXPECT_CLEAR_CACHE -> {
+                    if (findAndClickClearCache(root)) {
+                        handler.postDelayed({
+                            performGlobalAction(GLOBAL_ACTION_BACK)
+                            CleanCoordinator.notifyCleared()
+                        }, CLEAR_CACHE_SETTLE_MS)
+                    }
+                    return
+                }
+                CleanCoordinator.CleaningPhase.EXPECT_STORAGE -> {
+                    if (CleanCoordinator.consumeSkipStorageClick()) return
+                    if (findAndClickStorage(root)) {
+                        CleanCoordinator.setPhaseExpectClearCache()
+                    }
+                }
             }
-            // Phase 1: We're on App Info main — find and click "Storage" to open storage screen
-            findAndClickStorage(root)
         } finally {
             root.recycle()
         }
@@ -138,7 +141,5 @@ class CachelyAccessibilityService : AccessibilityService() {
     companion object {
         /** Delay after clicking "Clear cache" before going back (let UI update). */
         private const val CLEAR_CACHE_SETTLE_MS = 450L
-        /** Ignore events for this long after notifyCleared() to avoid double-acting on same transition. */
-        private const val NOTIFY_COOLDOWN_MS = 1500L
     }
 }

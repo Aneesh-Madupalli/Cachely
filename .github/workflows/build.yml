@@ -40,7 +40,7 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           retry_wait_seconds: 45
-          command: ./gradlew assembleRelease --no-daemon --stacktrace
+          command: bash -c './gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}'
         env:
           CACHELY_KEYSTORE_FILE: ${{ runner.temp }}/keystore.jks
           CACHELY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -54,7 +54,7 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           retry_wait_seconds: 45
-          command: ./gradlew assembleDebug --no-daemon --stacktrace
+          command: bash -c './gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}'
         if: vars.SIGNED_RELEASE != 'true'
 
       - name: Upload release APK artifact
@@ -105,6 +105,50 @@ jobs:
                -F "caption=${CAPTION}" \
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
 
+      - name: Notify on build failure
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${TG_BOT_TOKEN}" ] || [ -z "${TG_CHAT_ID}" ]; then
+            echo "Telegram secrets not set, skipping failure notification"
+            exit 0
+          fi
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TEXT="❌ *Cachely build failed*
+          *Run:* #${{ github.run_number }}
+          *Branch:* \`${{ github.ref_name }}\`
+          *Commit:* \`${SHORT_SHA}\`
+          *By:* ${{ github.actor }}
+          *Workflow:* ${{ github.workflow }}
+
+          [View logs](${RUN_URL})"
+          curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT_ID}" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=${TEXT}"
+
+      - name: Send build log on failure
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -f build.log ] && [ -s build.log ] && [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
+            tail -n 150 build.log > build-tail.log
+            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            CAPTION="Build log (last 150 lines) — Run #${{ github.run_number }} — ${{ github.ref_name }} — ${RUN_URL}"
+            curl -sS -F "chat_id=${TG_CHAT_ID}" \
+                 -F "document=@build-tail.log" \
+                 -F "caption=${CAPTION}" \
+                 "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+          fi
+
       - name: Job summary
         if: always()
         run: |
@@ -118,3 +162,8 @@ jobs:
           fi
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "failure" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Build failed" >> $GITHUB_STEP_SUMMARY
+            echo "See the job log above for error details." >> $GITHUB_STEP_SUMMARY
+          fi

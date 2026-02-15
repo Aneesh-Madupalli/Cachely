@@ -7,9 +7,13 @@ import android.provider.Settings
 import com.cachely.app.accessibility.AccessibilityHelper
 import com.cachely.app.accessibility.CleanCoordinator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private const val PER_APP_TIMEOUT_MS = 7_000L
+/** Delay between finishing one app and opening the next so back animation and state settle. */
+private const val BETWEEN_APPS_DELAY_MS = 400L
+private const val MAX_RETRIES_PER_APP = 1
 
 /**
  * Single orchestration point for all cache cleaning operations.
@@ -67,17 +71,44 @@ class CacheCleaner(private val context: Context) {
                     data = Uri.parse("package:$pkg")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                try {
-                    withContext(Dispatchers.Main.immediate) { context.startActivity(intent) }
-                    val cleared = CleanCoordinator.awaitCleared(PER_APP_TIMEOUT_MS)
-                    if (cleared) cleaned++ else skipped++
-                } catch (_: Exception) {
-                    skipped++
+                var cleared = false
+                var attempts = 0
+                while (attempts <= MAX_RETRIES_PER_APP && !cleared) {
+                    try {
+                        withContext(Dispatchers.Main.immediate) { context.startActivity(intent) }
+                        cleared = CleanCoordinator.awaitCleared(PER_APP_TIMEOUT_MS)
+                    } catch (_: Exception) { }
+                    if (!cleared && attempts < MAX_RETRIES_PER_APP) {
+                        delay(BETWEEN_APPS_DELAY_MS)
+                        attempts++
+                    } else break
                 }
+                if (cleared) cleaned++ else skipped++
+                if (index < packages.size - 1) delay(BETWEEN_APPS_DELAY_MS)
+            }
+            if (cleaned + skipped == packages.size) {
+                finishCleaningSession() // return to Cachely, end automation
             }
             CleaningResult(totalBytesFreed = 0L, appsCleaned = cleaned, appsSkipped = skipped)
         } finally {
             CleanCoordinator.endSession()
+        }
+    }
+
+    /**
+     * Called when all selected apps have been processed. Brings Cachely to front and ends the
+     * automation session so the service stops acting and state resets to IDLE.
+     * Must be called from a coroutine (uses Main for startActivity).
+     */
+    private suspend fun finishCleaningSession() {
+        CleanCoordinator.endSession()
+        withContext(Dispatchers.Main.immediate) {
+            try {
+                val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                    ?: return@withContext
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                context.startActivity(launch)
+            } catch (_: Exception) { }
         }
     }
 

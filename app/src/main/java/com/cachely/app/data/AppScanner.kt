@@ -17,11 +17,16 @@ import java.util.UUID
  * Fetches installed apps and builds app list with metadata.
  * Runs off main thread.
  *
- * Cache size: Requires PACKAGE_USAGE_STATS (Usage Access). When not granted,
- * all cache sizes are 0. Zero-cache filter is only applied when we can read stats.
+ * Cache size (StorageStatsManager, API 26+):
+ * - Requires PACKAGE_USAGE_STATS (Usage Access). User must grant in Settings;
+ *   when not granted, all cache sizes are 0.
+ * - On some OEMs / Android 11+ the system may still return 0 for privacy.
+ * - We never persist or show "fake" sizes; 0 is shown as 0 B.
  *
  * Package visibility (Android 11+): Manifest must declare <queries> so
  * getInstalledApplications() returns more than a handful of apps.
+ *
+ * Sort: by approxCacheBytes descending, then appName, then packageName for stability.
  */
 class AppScanner(private val context: Context) {
 
@@ -46,7 +51,11 @@ class AppScanner(private val context: Context) {
             .filter { if (excludeSystemApps) !it.isSystemApp else true }
             // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone
             .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0 else true }
-            .sortedWith(compareByDescending<AppCacheItem> { it.approxCacheBytes }.thenBy { it.appName })
+            .sortedWith(
+                compareByDescending<AppCacheItem> { it.approxCacheBytes }
+                    .thenBy { it.appName }
+                    .thenBy { it.packageName }
+            )
         apps
     }
 
@@ -65,10 +74,9 @@ class AppScanner(private val context: Context) {
     }
 
     /**
-     * Approximate cache size via StorageStatsManager. Returns 0 when:
-     * - No Usage Access, or
-     * - API < 26, or
-     * - Query throws (OEM / permission).
+     * Approximate cache size via StorageStatsManager (API 26+).
+     * Returns 0 when: no Usage Access, API < 26, or query throws (OEM/permission).
+     * Production: user must grant Usage Access in Settings for non-zero values.
      */
     private fun getApproxCacheSize(packageName: String): Long {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
