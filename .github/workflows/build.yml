@@ -1,5 +1,8 @@
 name: Build APK
 
+# Set repository variable SIGNED_RELEASE = 'true' when keystore secrets are configured
+# (Settings → Secrets and variables → Actions → Variables). Otherwise debug APK is built.
+
 on:
   push:
     branches: [main, master, build]
@@ -28,7 +31,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Decode signing keystore
-        if: secrets.KEYSTORE_BASE64 != ''
+        if: vars.SIGNED_RELEASE == 'true'
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/keystore.jks
 
       - name: Build signed release APK
@@ -43,7 +46,7 @@ jobs:
           CACHELY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           CACHELY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           CACHELY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        if: secrets.KEYSTORE_BASE64 != ''
+        if: vars.SIGNED_RELEASE == 'true'
 
       - name: Build debug APK (no keystore)
         uses: nick-fields/retry@v2
@@ -52,24 +55,24 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 45
           command: ./gradlew assembleDebug --no-daemon --stacktrace
-        if: secrets.KEYSTORE_BASE64 == ''
+        if: vars.SIGNED_RELEASE != 'true'
 
       - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: app/build/outputs/apk/release/app-release.apk
-        if: success() && secrets.KEYSTORE_BASE64 != ''
+        if: success() && vars.SIGNED_RELEASE == 'true'
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-        if: success() && secrets.KEYSTORE_BASE64 == ''
+        if: success() && vars.SIGNED_RELEASE != 'true'
 
       - name: Send release APK to Telegram
-        if: success() && secrets.KEYSTORE_BASE64 != '' && secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != ''
+        if: success() && vars.SIGNED_RELEASE == 'true'
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
@@ -85,7 +88,7 @@ jobs:
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
 
       - name: Send debug APK to Telegram
-        if: success() && secrets.KEYSTORE_BASE64 == '' && secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != ''
+        if: success() && vars.SIGNED_RELEASE != 'true'
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
@@ -99,3 +102,17 @@ jobs:
                -F "document=@app/build/outputs/apk/debug/app-debug.apk" \
                -F "caption=${CAPTION}" \
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Build APK" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ vars.SIGNED_RELEASE }}" = "true" ]; then
+            echo "- **Type:** Signed release" >> $GITHUB_STEP_SUMMARY
+            echo "- **Artifact:** \`app-release-apk\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Type:** Debug" >> $GITHUB_STEP_SUMMARY
+            echo "- **Artifact:** \`app-debug-apk\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

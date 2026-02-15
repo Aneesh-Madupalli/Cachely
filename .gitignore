@@ -52,4 +52,5 @@ Desktop.ini
 .env.local
 *.jks
 secrets.properties
+signing/
 
