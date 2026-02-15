@@ -73,6 +73,7 @@ jobs:
 
       - name: Send release APK to Telegram
         if: success() && vars.SIGNED_RELEASE == 'true'
+        continue-on-error: true
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
@@ -89,6 +90,7 @@ jobs:
 
       - name: Send debug APK to Telegram
         if: success() && vars.SIGNED_RELEASE != 'true'
+        continue-on-error: true
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}

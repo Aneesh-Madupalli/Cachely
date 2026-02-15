@@ -31,7 +31,10 @@ app/src/main/java/com/cachely/app/
 │   ├── CachelyAccessibilityService.kt # Detect App Info, click Clear cache, back
 │   └── CleanCoordinator.kt          # notifyCleared() / awaitCleared() app ↔ service
 ├── data/
-│   ├── CacheCleaner.kt     # cleanCache(): assisted or manual; returns CleaningResult
+│   ├── AppCacheItem.kt     # appName, packageName, approxCacheBytes, isSystemApp
+│   ├── AppScanner.kt       # scan(): installed apps, filter, sort by cache size
+│   ├── CacheCleaner.kt     # cleanCache(selectedPackages, progress): assisted or manual
+│   ├── CleaningProgress.kt # currentIndex, totalApps, currentAppName
 │   ├── CleaningResult.kt   # totalBytesFreed, appsCleaned, appsSkipped
 │   └── PreferencesRepository.kt    # DataStore: assisted preferred
 ├── ui/
@@ -56,7 +59,12 @@ app/src/main/java/com/cachely/app/
 
 **CacheCleaner (single public API):**
 ```kotlin
-suspend fun cleanCache(): CleaningResult
+suspend fun cleanCache(
+  selectedPackages: List<String>,
+  appNameResolver: (String) -> String,
+  onProgress: (suspend (CleaningProgress) -> Unit)?,
+  isCancelled: () -> Boolean
+): CleaningResult
 ```
 
 **CleaningResult:**
@@ -67,7 +75,10 @@ data class CleaningResult(totalBytesFreed: Long, appsCleaned: Int, appsSkipped: 
 **HomeUiState:**
 ```kotlin
 data class HomeUiState(
-  isCleaning: Boolean, lastCleaned: String?, assistedEnabled: Boolean, result: CleaningResult?
+  appList: List<AppCacheItem>,
+  selectedPackageNames: Set<String>,
+  isScanning: Boolean, isCleaning: Boolean, progress: CleaningProgress?,
+  lastCleaned: String?, result: CleaningResult?, accessibilityGranted: Boolean, ...
 )
 ```
 
@@ -77,13 +88,13 @@ data class HomeUiState(
 
 ## 4. Data Flow (Clean Cache)
 
-1. User taps "Clean cache" → **HomeViewModel.startCleaning()**
-2. **CacheCleaner.cleanCache()** → checks **AccessibilityHelper.isAccessibilityServiceEnabled()**
-3. If enabled: for each app, open App Info → **CachelyAccessibilityService** finds "Clear cache", clicks, back → **CleanCoordinator.notifyCleared()** → next app.
-4. If disabled: open system app list (manual flow).
-5. **CleaningResult** → ViewModel updates state → UI shows result.
+1. **Silent checks** at launch: accessibility status, installed apps (AppScanner).
+2. Home shows **app list** (AppScanner), user **selects** apps, taps **"Clean Selected"**.
+3. **Permission gate:** if Accessibility not granted → **PermissionScreen** (explain, open settings); else continue.
+4. **CacheCleaner.cleanCache(selectedPackages, …)** → for each selected app: open App Info → **CachelyAccessibilityService** finds "Clear cache", clicks, back → **CleanCoordinator.notifyCleared()** → **onProgress** → next app.
+5. **CleaningResult** (attempted, cleaned, skipped, bytes) → ViewModel → **Result summary** on Home.
 
-**Rule:** UI never knows how cleaning happens, only the result.
+**Rule:** UI never knows how cleaning happens, only the result. Root screen has **Bottom Nav: Home | Settings**.
 
 ---
 
