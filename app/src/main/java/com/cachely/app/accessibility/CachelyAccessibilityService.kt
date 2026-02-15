@@ -28,10 +28,11 @@ class CachelyAccessibilityService : AccessibilityService() {
         try {
             when (CleanCoordinator.getPhase()) {
                 CleanCoordinator.CleaningPhase.EXPECT_CLEAR_CACHE -> {
+                    val bytesCleared = extractCacheSizeFromStorageScreen(root)
                     if (findAndClickClearCache(root)) {
                         handler.postDelayed({
                             performGlobalAction(GLOBAL_ACTION_BACK)
-                            CleanCoordinator.notifyCleared()
+                            CleanCoordinator.notifyCleared(bytesCleared)
                         }, CLEAR_CACHE_SETTLE_MS)
                     }
                     return
@@ -49,6 +50,64 @@ class CachelyAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    /**
+     * Extract cache size from Storage screen (e.g. "Cache" label with "124 MB").
+     * Used only during user-initiated cleaning; returns 0 if not found or unreadable.
+     */
+    private fun extractCacheSizeFromStorageScreen(root: AccessibilityNodeInfo): Long {
+        return try {
+            extractCacheSizeRecursive(root)
+        } catch (_: Exception) {
+            0L
+        }
+    }
+
+    private fun extractCacheSizeRecursive(node: AccessibilityNodeInfo): Long {
+        val text = node.text?.toString()?.trim() ?: node.contentDescription?.toString()?.trim()
+        if (!text.isNullOrEmpty()) {
+            val bytes = parseSizeToBytes(text)
+            if (bytes > 0L) return bytes
+            if (text.equals("Cache", ignoreCase = true)) {
+                val parent = node.parent ?: return 0L
+                for (i in 0 until parent.childCount) {
+                    val child = parent.getChild(i) ?: continue
+                    try {
+                        val childText = child.text?.toString()?.trim() ?: continue
+                        val b = parseSizeToBytes(childText)
+                        if (b > 0L) return b
+                    } finally {
+                        child.recycle()
+                    }
+                }
+            }
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            try {
+                val b = extractCacheSizeRecursive(child)
+                if (b > 0L) return b
+            } finally {
+                child.recycle()
+            }
+        }
+        return 0L
+    }
+
+    /** Parse strings like "124 MB", "1.5 GB", "512 KB" to bytes. Returns 0 if not matched. */
+    private fun parseSizeToBytes(sizeText: String): Long {
+        val cleaned = sizeText.replace(",", ".").trim()
+        val regex = Regex("""([\d.]+)\s*(KB|MB|GB|[KMG])\b""", RegexOption.IGNORE_CASE)
+        val match = regex.find(cleaned) ?: return 0L
+        val value = match.groupValues[1].toDoubleOrNull() ?: return 0L
+        val unit = match.groupValues[2].uppercase()
+        return when {
+            unit.startsWith("K") -> (value * 1024).toLong()
+            unit.startsWith("M") -> (value * 1024 * 1024).toLong()
+            unit.startsWith("G") -> (value * 1024 * 1024 * 1024).toLong()
+            else -> 0L
+        }
+    }
 
     /** Click "Clear cache" only (not "Clear data"). Returns true if clicked. */
     private fun findAndClickClearCache(root: AccessibilityNodeInfo): Boolean {

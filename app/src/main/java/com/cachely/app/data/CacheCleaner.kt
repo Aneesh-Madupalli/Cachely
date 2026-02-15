@@ -40,7 +40,7 @@ class CacheCleaner(private val context: Context) {
         if (enabled && selectedPackages.isNotEmpty()) {
             runAssistedClean(selectedPackages, appNameResolver, onProgress, isCancelled)
         } else if (selectedPackages.isEmpty()) {
-            CleaningResult(totalBytesFreed = 0L, appsCleaned = 0, appsSkipped = 0)
+            CleaningResult(totalBytesFreed = 0L, appsCleaned = 0, appsSkipped = 0, durationSeconds = null)
         } else {
             runManualFlow(selectedPackages)
         }
@@ -53,6 +53,7 @@ class CacheCleaner(private val context: Context) {
         isCancelled: () -> Boolean
     ): CleaningResult = withContext(Dispatchers.Default) {
         CleanCoordinator.startSession()
+        val startTimeMs = System.currentTimeMillis()
         try {
             var cleaned = 0
             var skipped = 0
@@ -89,7 +90,13 @@ class CacheCleaner(private val context: Context) {
             if (cleaned + skipped == packages.size) {
                 finishCleaningSession() // return to Cachely, end automation
             }
-            CleaningResult(totalBytesFreed = 0L, appsCleaned = cleaned, appsSkipped = skipped)
+            val durationSeconds = ((System.currentTimeMillis() - startTimeMs) / 1000).toInt()
+            CleaningResult(
+                totalBytesFreed = CleanCoordinator.getTotalBytesCleared(),
+                appsCleaned = cleaned,
+                appsSkipped = skipped,
+                durationSeconds = durationSeconds
+            )
         } finally {
             CleanCoordinator.endSession()
         }
@@ -121,7 +128,7 @@ class CacheCleaner(private val context: Context) {
         try {
             context.startActivity(intent)
         } catch (_: Exception) { }
-        return CleaningResult(totalBytesFreed = 0L, appsCleaned = 0, appsSkipped = 0)
+        return CleaningResult(totalBytesFreed = 0L, appsCleaned = 0, appsSkipped = 0, durationSeconds = null)
     }
 
     fun isAccessibilityEnabled(): Boolean = accessibilityHelper.isAccessibilityServiceEnabled()

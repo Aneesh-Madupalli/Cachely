@@ -147,7 +147,8 @@ private fun AppRow(
                     maxLines = 1
                 )
                 Text(
-                    text = ByteFormatter.format(item.approxCacheBytes),
+                    text = if (item.approxCacheBytes > 0L) ByteFormatter.format(item.approxCacheBytes)
+                    else "Ready to clean",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -345,25 +346,62 @@ private fun ResultSummary(result: CleaningResult, lastCleaned: String?) {
                 .padding(Design.spaceStandard),
             verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
         ) {
-            lastCleaned?.let { last ->
-                Text(
-                    text = "Last cleaned: $last",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            val attempted = result.appsCleaned + result.appsSkipped
             Text(
-                text = "Attempted: $attempted • Cleaned: ${result.appsCleaned} • Skipped: ${result.appsSkipped}",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Cleaning complete",
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Approx cache cleared: ${ByteFormatter.format(result.totalBytesFreed)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = buildResultLine(result),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
+            if (result.totalBytesFreed > 0L) {
+                Text(
+                    text = "Cache cleared: ${ByteFormatter.format(result.totalBytesFreed)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                equivalentLine(result.totalBytesFreed)?.let { line ->
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            lastCleaned?.let { last ->
+                Text(
+                    text = "Last cleaned: $last",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+}
+
+private fun buildResultLine(result: CleaningResult): String {
+    val parts = mutableListOf<String>()
+    parts.add("${result.appsCleaned} app${if (result.appsCleaned == 1) "" else "s"} cleaned")
+    if (result.appsSkipped > 0) {
+        parts.add("${result.appsSkipped} skipped")
+    }
+    result.durationSeconds?.let { s ->
+        parts.add("${s}s")
+    }
+    return parts.joinToString(" • ")
+}
+
+/** Optional "equivalent" line for psychological reward; only real numbers, never inflated. */
+private fun equivalentLine(bytes: Long): String? {
+    if (bytes <= 0L) return null
+    val mb = bytes / (1024 * 1024)
+    return when {
+        mb >= 100 -> "That’s a lot of temporary data removed."
+        mb >= 10 -> "Roughly equivalent to hundreds of cached thumbnails."
+        mb >= 1 -> "Roughly equivalent to dozens of cached images."
+        else -> null
     }
 }
 
@@ -412,7 +450,7 @@ private fun HomeScreenPreviewResult() {
         HomeScreenContent(
             state = HomeUiState(
                 lastCleaned = "2 min ago",
-                result = CleaningResult(totalBytesFreed = 256_000_000L, appsCleaned = 12, appsSkipped = 2),
+                result = CleaningResult(totalBytesFreed = 256_000_000L, appsCleaned = 12, appsSkipped = 2, durationSeconds = 45),
                 accessibilityGranted = true
             ),
             onCleanSelected = {},

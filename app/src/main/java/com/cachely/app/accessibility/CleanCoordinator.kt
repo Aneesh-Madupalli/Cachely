@@ -36,6 +36,8 @@ object CleanCoordinator {
     private val phaseRef = AtomicReference(CleaningPhase.EXPECT_STORAGE)
     /** After notifyCleared we see "back to App Info" once; skip one Storage click so we don't reopen same app. */
     private val skipStorageClicksRef = AtomicInteger(0)
+    /** Sum of cache bytes extracted from Storage screens before clearing (real values only). */
+    private val totalBytesClearedRef = AtomicLong(0L)
 
     /**
      * Start an automation session. Call only when user has just tapped "Clean Selected".
@@ -46,6 +48,7 @@ object CleanCoordinator {
         sessionStartedAtMs.set(System.currentTimeMillis())
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
         skipStorageClicksRef.set(0)
+        totalBytesClearedRef.set(0L)
         while (clearedChannel.tryReceive().isSuccess) { /* drain stale */ }
     }
 
@@ -58,7 +61,16 @@ object CleanCoordinator {
         sessionStartedAtMs.set(0L)
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
         skipStorageClicksRef.set(0)
+        totalBytesClearedRef.set(0L)
     }
+
+    /** Add bytes cleared (from extracted Storage screen value). Called before notifyCleared. */
+    fun addBytesCleared(bytes: Long) {
+        if (bytes > 0L) totalBytesClearedRef.addAndGet(bytes)
+    }
+
+    /** Total cache bytes cleared this session (from extracted values only). */
+    fun getTotalBytesCleared(): Long = totalBytesClearedRef.get()
 
     /**
      * True only while a session is active and not expired.
@@ -85,10 +97,12 @@ object CleanCoordinator {
 
     /**
      * Call from AccessibilityService when "Clear cache" was tapped and we've navigated back.
+     * [bytesCleared] is the cache size extracted from the Storage screen before clearing (0 if not readable).
      * Resets phase to EXPECT_STORAGE for the next app and marks that the next Storage screen
      * (back to previous app's App Info) must be skipped so we don't double-act.
      */
-    fun notifyCleared() {
+    fun notifyCleared(bytesCleared: Long = 0L) {
+        if (bytesCleared > 0L) totalBytesClearedRef.addAndGet(bytesCleared)
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
         skipStorageClicksRef.set(1)
         clearedChannel.trySend(Unit)
