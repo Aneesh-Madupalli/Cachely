@@ -73,6 +73,8 @@ fun HomeScreen(
         state = state,
         onCleanSelected = { viewModel.onCleanSelected(context) },
         onToggleSelection = { viewModel.toggleSelection(it) },
+        onSelectAll = { viewModel.selectAll() },
+        onClearSelection = { viewModel.clearSelection() },
         modifier = modifier
     )
 }
@@ -169,6 +171,8 @@ fun HomeScreenContent(
     state: HomeUiState,
     onCleanSelected: () -> Unit,
     onToggleSelection: (String) -> Unit,
+    onSelectAll: () -> Unit,
+    onClearSelection: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val padding = screenPadding()
@@ -180,12 +184,38 @@ fun HomeScreenContent(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "Cachely",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(vertical = Design.spaceSmall)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Design.spaceSmall),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Cachely",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            if (state.appList.isNotEmpty() && !state.isScanning) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Design.spaceInner),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select all",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onSelectAll)
+                    )
+                    Text(
+                        text = "Clear",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable(onClick = onClearSelection)
+                    )
+                }
+            }
+        }
 
         if (state.isScanning) {
             Box(
@@ -350,7 +380,9 @@ private fun HomeScreenPreviewIdle() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
-            onToggleSelection = {}
+            onToggleSelection = {},
+            onSelectAll = {},
+            onClearSelection = {}
         )
     }
 }
@@ -366,7 +398,9 @@ private fun HomeScreenPreviewCleaning() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
-            onToggleSelection = {}
+            onToggleSelection = {},
+            onSelectAll = {},
+            onClearSelection = {}
         )
     }
 }
@@ -382,7 +416,9 @@ private fun HomeScreenPreviewResult() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
-            onToggleSelection = {}
+            onToggleSelection = {},
+            onSelectAll = {},
+            onClearSelection = {}
         )
     }
 }

@@ -48,31 +48,37 @@ class CacheCleaner(private val context: Context) {
         onProgress: (suspend (CleaningProgress) -> Unit)?,
         isCancelled: () -> Boolean
     ): CleaningResult = withContext(Dispatchers.Default) {
-        var cleaned = 0
-        var skipped = 0
-        val total = packages.size
-        for ((index, pkg) in packages.withIndex()) {
-            if (isCancelled()) break
-            onProgress?.invoke(
-                CleaningProgress(
-                    currentIndex = index + 1,
-                    totalApps = total,
-                    currentAppName = appNameResolver(pkg)
+        CleanCoordinator.startSession()
+        try {
+            var cleaned = 0
+            var skipped = 0
+            val total = packages.size
+            for ((index, pkg) in packages.withIndex()) {
+                if (isCancelled()) break
+                if (!CleanCoordinator.isSessionActive()) break
+                onProgress?.invoke(
+                    CleaningProgress(
+                        currentIndex = index + 1,
+                        totalApps = total,
+                        currentAppName = appNameResolver(pkg)
+                    )
                 )
-            )
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:$pkg")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$pkg")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                try {
+                    withContext(Dispatchers.Main.immediate) { context.startActivity(intent) }
+                    val cleared = CleanCoordinator.awaitCleared(PER_APP_TIMEOUT_MS)
+                    if (cleared) cleaned++ else skipped++
+                } catch (_: Exception) {
+                    skipped++
+                }
             }
-            try {
-                withContext(Dispatchers.Main.immediate) { context.startActivity(intent) }
-                val cleared = CleanCoordinator.awaitCleared(PER_APP_TIMEOUT_MS)
-                if (cleared) cleaned++ else skipped++
-            } catch (_: Exception) {
-                skipped++
-            }
+            CleaningResult(totalBytesFreed = 0L, appsCleaned = cleaned, appsSkipped = skipped)
+        } finally {
+            CleanCoordinator.endSession()
         }
-        CleaningResult(totalBytesFreed = 0L, appsCleaned = cleaned, appsSkipped = skipped)
     }
 
     private fun runManualFlow(selectedPackages: List<String>): CleaningResult {

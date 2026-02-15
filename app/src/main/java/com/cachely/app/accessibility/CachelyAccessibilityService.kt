@@ -11,21 +11,29 @@ import android.view.accessibility.AccessibilityNodeInfo
  * 1) If we see "Storage" / "Storage & cache" → click it to open storage screen.
  * 2) If we see "Clear cache" → click it, wait, back, then notify cleared.
  *
+ * Guard: Automation runs ONLY when CleanCoordinator.isSessionActive() is true (session
+ * started by user tapping "Clean Selected"). When app is closed or user didn't start a clean,
+ * no session → we do nothing. Prevents rogue automation when user manually opens App Info.
+ *
  * Does not read or store screen content. User-initiated only. Compliant with Play policy.
  */
 class CachelyAccessibilityService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
+    private var lastNotifyAtMs = 0L
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         if (event.packageName?.toString() != "com.android.settings") return
+        if (!CleanCoordinator.isSessionActive()) return
+        if (System.currentTimeMillis() - lastNotifyAtMs < NOTIFY_COOLDOWN_MS) return
         val root = event.source ?: rootInActiveWindow ?: return
         try {
             // Phase 2: We're on Storage screen — find and click "Clear cache", then back + notify
             if (findAndClickClearCache(root)) {
                 handler.postDelayed({
                     performGlobalAction(GLOBAL_ACTION_BACK)
+                    lastNotifyAtMs = System.currentTimeMillis()
                     CleanCoordinator.notifyCleared()
                 }, CLEAR_CACHE_SETTLE_MS)
                 return
@@ -130,5 +138,7 @@ class CachelyAccessibilityService : AccessibilityService() {
     companion object {
         /** Delay after clicking "Clear cache" before going back (let UI update). */
         private const val CLEAR_CACHE_SETTLE_MS = 450L
+        /** Ignore events for this long after notifyCleared() to avoid double-acting on same transition. */
+        private const val NOTIFY_COOLDOWN_MS = 1500L
     }
 }

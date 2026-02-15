@@ -89,6 +89,18 @@ class HomeViewModel(
         }
     }
 
+    /** Select all apps currently in the list. */
+    fun selectAll() {
+        _state.update { state ->
+            state.copy(selectedPackageNames = state.appList.map { it.packageName }.toSet())
+        }
+    }
+
+    /** Clear all selection. */
+    fun clearSelection() {
+        _state.update { it.copy(selectedPackageNames = emptySet()) }
+    }
+
     /** User tapped "Clean Selected". Permission gate: if not granted, navigate to permission; else start cleaning. */
     fun onCleanSelected(context: android.content.Context) {
         val state = _state.value
