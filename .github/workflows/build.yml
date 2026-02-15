@@ -27,16 +27,75 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build debug APK
+      - name: Decode signing keystore
+        if: secrets.KEYSTORE_BASE64 != ''
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/keystore.jks
+
+      - name: Build signed release APK
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 45
+          command: ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          CACHELY_KEYSTORE_FILE: ${{ runner.temp }}/keystore.jks
+          CACHELY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          CACHELY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CACHELY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        if: secrets.KEYSTORE_BASE64 != ''
+
+      - name: Build debug APK (no keystore)
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 15
           max_attempts: 3
           retry_wait_seconds: 45
           command: ./gradlew assembleDebug --no-daemon --stacktrace
+        if: secrets.KEYSTORE_BASE64 == ''
 
-      - name: Upload APK artifact
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+        if: success() && secrets.KEYSTORE_BASE64 != ''
+
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/
+          path: app/build/outputs/apk/debug/app-debug.apk
+        if: success() && secrets.KEYSTORE_BASE64 == ''
+
+      - name: Send release APK to Telegram
+        if: success() && secrets.KEYSTORE_BASE64 != '' && secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != ''
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          CAPTION="Cachely release APK (signed) — Build #${{ github.run_number }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${RUN_URL}"
+          curl -sS -F "chat_id=${TG_CHAT_ID}" \
+               -F "document=@app/build/outputs/apk/release/app-release.apk" \
+               -F "caption=${CAPTION}" \
+               "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+
+      - name: Send debug APK to Telegram
+        if: success() && secrets.KEYSTORE_BASE64 == '' && secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != ''
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          CAPTION="Cachely debug APK — Build #${{ github.run_number }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${RUN_URL}"
+          curl -sS -F "chat_id=${TG_CHAT_ID}" \
+               -F "document=@app/build/outputs/apk/debug/app-debug.apk" \
+               -F "caption=${CAPTION}" \
+               "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"

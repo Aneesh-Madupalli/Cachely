@@ -16,10 +16,26 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        val keystoreFile = System.getenv("CACHELY_KEYSTORE_FILE")
+        val keystorePassword = System.getenv("CACHELY_KEYSTORE_PASSWORD")
+        val keyAlias = System.getenv("CACHELY_KEY_ALIAS")
+        val keyPassword = System.getenv("CACHELY_KEY_PASSWORD")
+        if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
