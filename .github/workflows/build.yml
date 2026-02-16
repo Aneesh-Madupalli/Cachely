@@ -84,7 +84,7 @@ jobs:
           Commit: ${{ github.sha }}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
-               -F "document=@app/build/outputs/apk/release/app-release.apk" \
+               -F "document=@app/build/outputs/apk/release/app-release.apk;filename=cachely_release.apk" \
                -F "caption=${CAPTION}" \
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
 
@@ -101,7 +101,7 @@ jobs:
           Commit: ${{ github.sha }}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
-               -F "document=@app/build/outputs/apk/debug/app-debug.apk" \
+               -F "document=@app/build/outputs/apk/debug/app-debug.apk;filename=cachely_debug.apk" \
                -F "caption=${CAPTION}" \
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
 
