@@ -72,7 +72,7 @@ jobs:
           name: quality-log
           path: quality.log
 
-      # Notify Telegram with failure details so you can monitor without opening the run.
+      # Single Telegram message on quality failure: reason + log tail (no separate document).
       - name: Notify on quality gate failure (Telegram)
         if: failure()
         continue-on-error: true
@@ -91,29 +91,20 @@ jobs:
           [ "${TEST_EXIT:-0}" != "0" ] && REASON="${REASON}• Unit tests failed"$'\n'
           [ -z "$REASON" ] && REASON="• Quality gate failed (see log)"$'\n'
           SHORT_SHA="${GITHUB_SHA:0:7}"
+          LOG_TAIL=""
+          if [ -f quality.log ] && [ -s quality.log ]; then
+            LOG_TAIL=$'\n\n''```'$'\n'"$(tail -n 25 quality.log | sed 's/`/'"'"'/g')"$'\n''```'
+          fi
           TEXT="❌ *Cachely quality gate failed*
-          *Run:* #${{ github.run_number }}
-          *Branch:* \`${{ github.ref_name }}\`
-          *Commit:* \`${SHORT_SHA}\`
-          *By:* ${{ github.actor }}
+          *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *By:* ${{ github.actor }}
 
-          *Failed:*
-          ${REASON}
-
-          [View run](${RUN_URL})"
+          *Failed:* ${REASON}
+          [View run](${RUN_URL})${LOG_TAIL}"
           curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TG_CHAT_ID}" \
             -d "parse_mode=Markdown" \
             -d "disable_web_page_preview=true" \
             --data-urlencode "text=${TEXT}"
-          if [ -f quality.log ] && [ -s quality.log ]; then
-            tail -n 100 quality.log > quality-tail.log
-            CAPTION="Quality log (last 100 lines) — Run #${{ github.run_number }} — ${{ github.ref_name }} — ${RUN_URL}"
-            curl -sS -F "chat_id=${TG_CHAT_ID}" \
-              -F "document=@quality-tail.log" \
-              -F "caption=${CAPTION}" \
-              "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
-          fi
 
       - name: Quality job summary
         if: always()
@@ -233,7 +224,8 @@ jobs:
                -F "caption=${CAPTION}" \
                "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
 
-      - name: Notify on build failure
+      # Single Telegram message on build failure: header + log tail (no separate document).
+      - name: Notify on build failure (Telegram)
         if: failure()
         continue-on-error: true
         env:
@@ -246,36 +238,19 @@ jobs:
             exit 0
           fi
           SHORT_SHA="${GITHUB_SHA:0:7}"
+          LOG_TAIL=""
+          if [ -f build.log ] && [ -s build.log ]; then
+            LOG_TAIL=$'\n\n''```'$'\n'"$(tail -n 25 build.log | sed 's/`/'"'"'/g')"$'\n''```'
+          fi
           TEXT="❌ *Cachely build failed*
-          *Run:* #${{ github.run_number }}
-          *Branch:* \`${{ github.ref_name }}\`
-          *Commit:* \`${SHORT_SHA}\`
-          *By:* ${{ github.actor }}
-          *Workflow:* ${{ github.workflow }}
+          *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *By:* ${{ github.actor }}
 
-          [View logs](${RUN_URL})"
+          [View run](${RUN_URL})${LOG_TAIL}"
           curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TG_CHAT_ID}" \
             -d "parse_mode=Markdown" \
             -d "disable_web_page_preview=true" \
             --data-urlencode "text=${TEXT}"
-
-      - name: Send build log on failure
-        if: failure()
-        continue-on-error: true
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-        run: |
-          if [ -f build.log ] && [ -s build.log ] && [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
-            tail -n 150 build.log > build-tail.log
-            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            CAPTION="Build log (last 150 lines) — Run #${{ github.run_number }} — ${{ github.ref_name }} — ${RUN_URL}"
-            curl -sS -F "chat_id=${TG_CHAT_ID}" \
-                 -F "document=@build-tail.log" \
-                 -F "caption=${CAPTION}" \
-                 "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
-          fi
 
       - name: Job summary
         if: always()

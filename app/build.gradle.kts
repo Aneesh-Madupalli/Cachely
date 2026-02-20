@@ -52,6 +52,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // PACKAGE_USAGE_STATS is user-granted via Usage Access in Settings; Lint's ProtectedPermissions is a false positive.
+    lint {
+        disable += "ProtectedPermissions"
+    }
 }
 
 dependencies {
