@@ -54,7 +54,8 @@ jobs:
       - name: Set quality summary output
         id: set_summary
         if: success()
-        run: echo "quality_summary=Lint: passed • Unit tests: passed" >> $GITHUB_OUTPUT
+        run: |
+          echo "quality_summary=Lint: passed • Unit tests: passed" >> $GITHUB_OUTPUT
 
       - name: Upload lint report artifact
         if: always()
