@@ -1,5 +1,6 @@
 name: Build APK
 
+# Pipeline: (1) Quality gate (lint + unit tests) → (2) Build APK.
 # Set repository variable SIGNED_RELEASE = 'true' when keystore secrets are configured
 # (Settings → Secrets and variables → Actions → Variables). Otherwise debug APK is built.
 
@@ -9,7 +10,129 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Quality gate: Android Lint + unit tests. Must pass before building APK.
+  # On success, summary is passed to build job for Telegram. On failure, details
+  # are sent to Telegram (which step failed + log snippet).
+  # ---------------------------------------------------------------------------
+  quality:
+    runs-on: ubuntu-latest
+    outputs:
+      summary: ${{ steps.set_summary.outputs.quality_summary }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: tools platform-tools platforms;android-35 build-tools;35.0.0
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Run Android Lint (debug variant) then unit tests; capture log for failure reporting.
+      - name: Run Android Lint and unit tests
+        run: |
+          set -e
+          echo "Running Android Lint (debug)..." && ./gradlew :app:lintDebug --no-daemon 2>&1 | tee quality.log
+          LINT_EXIT=${PIPESTATUS[0]}
+          echo "Running unit tests (debug)..." && ./gradlew :app:testDebugUnitTest --no-daemon 2>&1 | tee -a quality.log
+          TEST_EXIT=${PIPESTATUS[0]}
+          echo "LINT_EXIT=$LINT_EXIT" > quality_result.txt
+          echo "TEST_EXIT=$TEST_EXIT" >> quality_result.txt
+          exit $((LINT_EXIT | TEST_EXIT))
+
+      # Persist quality summary for use in build job (e.g. Telegram success caption).
+      - name: Set quality summary output
+        id: set_summary
+        if: success()
+        run: echo "quality_summary=Lint: passed • Unit tests: passed" >> $GITHUB_OUTPUT
+
+      - name: Upload lint report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: app/build/reports/lint-results*.html
+          if-no-files-found: ignore
+
+      - name: Upload quality log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-log
+          path: quality.log
+
+      # Notify Telegram with failure details so you can monitor without opening the run.
+      - name: Notify on quality gate failure (Telegram)
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${TG_BOT_TOKEN}" ] || [ -z "${TG_CHAT_ID}" ]; then
+            echo "Telegram secrets not set, skipping quality failure notification"
+            exit 0
+          fi
+          REASON=""
+          [ -f quality_result.txt ] && . quality_result.txt
+          [ "${LINT_EXIT:-0}" != "0" ] && REASON="${REASON}• Android Lint failed"$'\n'
+          [ "${TEST_EXIT:-0}" != "0" ] && REASON="${REASON}• Unit tests failed"$'\n'
+          [ -z "$REASON" ] && REASON="• Quality gate failed (see log)"$'\n'
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TEXT="❌ *Cachely quality gate failed*
+          *Run:* #${{ github.run_number }}
+          *Branch:* \`${{ github.ref_name }}\`
+          *Commit:* \`${SHORT_SHA}\`
+          *By:* ${{ github.actor }}
+
+          *Failed:*
+          ${REASON}
+
+          [View run](${RUN_URL})"
+          curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT_ID}" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=${TEXT}"
+          if [ -f quality.log ] && [ -s quality.log ]; then
+            tail -n 100 quality.log > quality-tail.log
+            CAPTION="Quality log (last 100 lines) — Run #${{ github.run_number }} — ${{ github.ref_name }} — ${RUN_URL}"
+            curl -sS -F "chat_id=${TG_CHAT_ID}" \
+              -F "document=@quality-tail.log" \
+              -F "caption=${CAPTION}" \
+              "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+          fi
+
+      - name: Quality job summary
+        if: always()
+        run: |
+          echo "## Quality gate" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lint:** \`:app:lintDebug\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Unit tests:** \`:app:testDebugUnitTest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "failure" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Quality gate failed" >> $GITHUB_STEP_SUMMARY
+            echo "See the job log and the \`quality-log\` / \`lint-reports\` artifacts for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Build APK (release or debug). Runs only after quality gate passes.
+  # ---------------------------------------------------------------------------
   build:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -77,11 +200,13 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          QUALITY_SUMMARY: ${{ needs.quality.outputs.summary }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           CAPTION="Cachely release APK (signed) — Build #${{ github.run_number }}
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
+          Quality: ${QUALITY_SUMMARY}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
                -F "document=@app/build/outputs/apk/release/app-release.apk;filename=cachely_release.apk" \
@@ -94,11 +219,13 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          QUALITY_SUMMARY: ${{ needs.quality.outputs.summary }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           CAPTION="Cachely debug APK — Build #${{ github.run_number }}
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
+          Quality: ${QUALITY_SUMMARY}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
                -F "document=@app/build/outputs/apk/debug/app-debug.apk;filename=cachely_debug.apk" \
@@ -153,6 +280,7 @@ jobs:
         if: always()
         run: |
           echo "## Build APK" >> $GITHUB_STEP_SUMMARY
+          echo "- **Quality gate:** ${{ needs.quality.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ vars.SIGNED_RELEASE }}" = "true" ]; then
             echo "- **Type:** Signed release" >> $GITHUB_STEP_SUMMARY
             echo "- **Artifact:** \`app-release-apk\`" >> $GITHUB_STEP_SUMMARY
