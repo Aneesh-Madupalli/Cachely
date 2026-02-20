@@ -86,8 +86,15 @@ class AppScanner(private val context: Context) {
             val storageManager = context.getSystemService(Context.STORAGE_SERVICE)
                 as? StorageManager ?: return 0L
             val volume = storageManager.getStorageVolume(Environment.getDataDirectory()) ?: return 0L
-            val uuidStr = volume.uuid ?: return 0L
-            val uuid = UUID.fromString(uuidStr)
+            // Default internal storage often has null uuid; use StorageManager.UUID_DEFAULT (API 26+).
+            val uuid = when (val uuidStr = volume.uuid) {
+                null, "" -> StorageManager.UUID_DEFAULT
+                else -> try {
+                    UUID.fromString(uuidStr)
+                } catch (_: Exception) {
+                    StorageManager.UUID_DEFAULT
+                }
+            }
             val userHandle = UserHandle.getUserHandleForUid(Process.myUid())
             val stats = storageStatsManager.queryStatsForPackage(uuid, packageName, userHandle)
             stats.cacheBytes
