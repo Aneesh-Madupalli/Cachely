@@ -1,6 +1,6 @@
 # Cachely – Codebase Reference
 
-Quick lookup: path → purpose → do not. Use with [CONTEXT.md](CONTEXT.md).
+Quick lookup: path → purpose → do not. Use with [CONTEXT.md](CONTEXT.md). For canonical app flow (screens, copy, navigation) see [APP_FLOW.md](../APP_FLOW.md).
 
 | Path | Purpose | Do not |
 |------|---------|--------|

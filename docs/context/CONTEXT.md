@@ -11,6 +11,7 @@
 | Document | Use when |
 |----------|----------|
 | [CONTEXT.md](CONTEXT.md) (this file) | Starting work, onboarding, AI context |
+| [APP_FLOW.md](../APP_FLOW.md) | **Canonical app flow:** launch, navigation, screens, copy (single source of truth) |
 | [CODEBASE.md](CODEBASE.md) | Finding where to change something |
 | [TDD.md](../TDD.md) | Implementation details, APIs, constraints |
 | [PRD.md](../PRD.md) | Scope, metrics, Play Store, QA |

@@ -72,6 +72,7 @@ fun HomeScreen(
     HomeScreenContent(
         state = state,
         onCleanSelected = { viewModel.onCleanSelected(context) },
+        onCancelCleaning = { viewModel.requestCancel() },
         onToggleSelection = { viewModel.toggleSelection(it) },
         onSelectAll = { viewModel.selectAll() },
         onClearSelection = { viewModel.clearSelection() },
@@ -147,7 +148,7 @@ private fun AppRow(
                     maxLines = 1
                 )
                 Text(
-                    text = if (item.approxCacheBytes > 0L) ByteFormatter.format(item.approxCacheBytes)
+                    text = if (item.approxCacheBytes > 0L) "~${ByteFormatter.format(item.approxCacheBytes)} reclaimable"
                     else "Ready to clean",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -171,12 +172,18 @@ private fun AppRow(
 fun HomeScreenContent(
     state: HomeUiState,
     onCleanSelected: () -> Unit,
+    onCancelCleaning: () -> Unit = {},
     onToggleSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val padding = screenPadding()
+    val selectedReclaimableBytes = remember(state.appList, state.selectedPackageNames) {
+        state.appList
+            .filter { it.packageName in state.selectedPackageNames }
+            .sumOf { it.approxCacheBytes }
+    }
 
     Column(
         modifier = modifier
@@ -185,6 +192,22 @@ fun HomeScreenContent(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Design.spaceSmall)
+        ) {
+            Text(
+                text = "Cachely",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "Free up space. Carefully.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -192,11 +215,7 @@ fun HomeScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Cachely",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Spacer(modifier = Modifier)
             if (state.appList.isNotEmpty() && !state.isScanning) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Design.spaceInner),
@@ -259,42 +278,89 @@ fun HomeScreenContent(
 
         Spacer(modifier = Modifier.height(Design.spaceInner))
 
+        if (state.selectedPackageNames.isNotEmpty() && !state.isCleaning) {
+            val n = state.selectedPackageNames.size
+            val reclaimStr = if (selectedReclaimableBytes > 0L) " · ~${ByteFormatter.format(selectedReclaimableBytes)} reclaimable" else ""
+            Text(
+                text = "$n app${if (n == 1) "" else "s"} selected$reclaimStr",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = Design.spaceSmall)
+            )
+        }
+
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
         val scale = animateFloatAsState(
             targetValue = if (isPressed) 0.98f else 1f,
             animationSpec = tween(durationMillis = 120)
         )
-        Button(
-            onClick = onCleanSelected,
-            enabled = !state.isCleaning && state.selectedPackageNames.isNotEmpty(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .graphicsLayer(scaleX = scale.value, scaleY = scale.value),
-            shape = RoundedCornerShape(Design.radiusSmall),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-            interactionSource = interactionSource
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = onCleanSelected,
+                enabled = !state.isCleaning && state.selectedPackageNames.isNotEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .graphicsLayer(scaleX = scale.value, scaleY = scale.value),
+                shape = RoundedCornerShape(Design.radiusSmall),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                interactionSource = interactionSource
+            ) {
+                Text(
+                    text = when {
+                        state.isCleaning -> "Cleaning…"
+                        else -> "Clean selected apps"
+                    },
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            if (!state.isCleaning && state.selectedPackageNames.isNotEmpty()) {
+                Text(
+                    text = "You stay in control",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Design.spaceMicro)
+                )
+            }
+        }
+
+        val progress = state.progress
+        if (state.isCleaning && progress != null) {
+            Spacer(modifier = Modifier.height(Design.spaceSmall))
+            ProgressChip(progress = progress)
             Text(
-                text = when {
-                    state.isCleaning -> "Cleaning…"
-                    else -> "Clean Selected"
-                },
-                style = MaterialTheme.typography.labelLarge
+                text = "Currently assisting: ${progress.currentAppName}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = Design.spaceMicro)
+            )
+            Text(
+                text = "Cancel after current app",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clickable(onClick = onCancelCleaning)
+                    .padding(vertical = Design.spaceSmall)
             )
         }
 
-        if (state.isCleaning && state.progress != null) {
-            Spacer(modifier = Modifier.height(Design.spaceSmall))
-            ProgressChip(progress = state.progress!!)
-        }
-
-        if (state.result != null) {
+        val result = state.result
+        if (result != null) {
             Spacer(modifier = Modifier.height(Design.spaceSection))
             ResultSummary(
-                result = state.result!!,
+                result = result,
                 lastCleaned = state.lastCleaned
+            )
+            Spacer(modifier = Modifier.height(Design.spaceSmall))
+            Text(
+                text = "Your apps are lighter — nothing else was touched",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = Design.spaceMicro)
             )
         }
 
@@ -324,7 +390,7 @@ private fun ProgressChip(progress: CleaningProgress) {
                 strokeWidth = 2.dp
             )
             Text(
-                text = "Cleaning ${progress.currentIndex} / ${progress.totalApps} — ${progress.currentAppName}",
+                text = "Cleaning ${progress.currentIndex} of ${progress.totalApps}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
@@ -418,6 +484,7 @@ private fun HomeScreenPreviewIdle() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
+            onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
             onClearSelection = {}
@@ -436,6 +503,7 @@ private fun HomeScreenPreviewCleaning() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
+            onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
             onClearSelection = {}
@@ -454,6 +522,7 @@ private fun HomeScreenPreviewResult() {
                 accessibilityGranted = true
             ),
             onCleanSelected = {},
+            onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
             onClearSelection = {}

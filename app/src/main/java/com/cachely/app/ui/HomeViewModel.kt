@@ -25,6 +25,7 @@ data class HomeUiState(
     val excludeZeroCache: Boolean = false,
     val isScanning: Boolean = false,
     val isCleaning: Boolean = false,
+    val cancelRequested: Boolean = false,
     val progress: CleaningProgress? = null,
     val lastCleaned: String? = null,
     val result: CleaningResult? = null,
@@ -127,7 +128,7 @@ class HomeViewModel(
         }
         viewModelScope.launch {
             _state.update {
-                it.copy(isCleaning = true, result = null, progress = null)
+                it.copy(isCleaning = true, result = null, progress = null, cancelRequested = false)
             }
             val result = cacheCleaner.cleanCache(
                 selectedPackages = selected,
@@ -137,12 +138,13 @@ class HomeViewModel(
                         _state.update { it.copy(progress = progress) }
                     }
                 },
-                isCancelled = { false }
+                isCancelled = { _state.value.cancelRequested }
             )
             _state.update {
                 it.copy(
                     isCleaning = false,
                     progress = null,
+                    cancelRequested = false,
                     lastCleaned = TimeFormatter.formatRelative(System.currentTimeMillis()),
                     result = result
                 )
@@ -150,8 +152,13 @@ class HomeViewModel(
         }
     }
 
+    /** Request stop after the current app finishes (cancel after current app). */
+    fun requestCancel() {
+        _state.update { state -> state.copy(cancelRequested = true) }
+    }
+
     fun clearResult() {
-        _state.update { it.copy(result = null, lastCleaned = null) }
+        _state.update { state -> state.copy(result = null, lastCleaned = null) }
     }
 }
 
@@ -159,11 +166,12 @@ class HomeViewModelFactory(
     private val cacheCleaner: CacheCleaner,
     private val appScanner: AppScanner
 ) : ViewModelProvider.Factory {
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-            return HomeViewModel(cacheCleaner, appScanner) as T
+        require(modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+            "Unknown ViewModel class: ${modelClass.name}"
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        return HomeViewModel(cacheCleaner, appScanner) as T
     }
 }

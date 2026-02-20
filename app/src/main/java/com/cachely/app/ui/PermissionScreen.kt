@@ -51,19 +51,45 @@ fun PermissionScreen(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(Design.spaceInner))
+        Spacer(modifier = Modifier.height(Design.spaceMicro))
+        Text(
+            text = "Only when you ask. Never in the background.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(Design.spaceSection))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(Design.radiusMedium),
             color = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            Text(
+            Column(
                 modifier = Modifier.padding(Design.spaceStandard),
-                text = "Cachely can use Accessibility only to tap the \"Clear cache\" button on app info screens when you choose to clean. It does not read screen content, collect data, or run in the background. You can turn it off anytime in your device settings.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Start
-            )
+                verticalArrangement = Arrangement.spacedBy(Design.spaceInner)
+            ) {
+                Text(
+                    text = "What Cachely does",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "• Opens app storage screens\n• Taps \"Clear cache\" like a human\n• Stops instantly if access is revoked",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Start
+                )
+                Text(
+                    text = "What Cachely never does",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "• No background actions\n• No data or file deletion\n• No action without user intent",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Start
+                )
+            }
         }
         Spacer(modifier = Modifier.height(Design.spacePage))
         Button(
@@ -82,7 +108,7 @@ fun PermissionScreen(
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
         ) {
             Text(
-                "Enable assisted mode",
+                "Enable assisted cleaning",
                 style = MaterialTheme.typography.labelLarge
             )
         }

@@ -161,7 +161,7 @@ fun SettingsScreenContent(
                     )
                     Spacer(modifier = Modifier.height(Design.spaceSmall))
                     Text(
-                        text = "When enabled, Cachely can tap \"Clear cache\" for you on app info screens. You can turn this off anytime in device settings.",
+                        text = "Allows Cachely to guide cache clearing screens. You can turn this off anytime in device settings.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -171,7 +171,7 @@ fun SettingsScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Use assisted cleaning",
+                            text = "Assisted cleaning",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f)
@@ -193,7 +193,7 @@ fun SettingsScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Configure",
+                            text = "Configure access",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -201,7 +201,7 @@ fun SettingsScreenContent(
                 }
             }
 
-            // Cache sizes (Usage Access)
+            // Transparency (cache size estimation + usage access)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(Design.radiusMedium),
@@ -214,12 +214,17 @@ fun SettingsScreenContent(
                     verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
                 ) {
                     Text(
-                        text = "Cache sizes",
+                        text = "Transparency",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "To show approximate cache size per app, grant Usage Access. Otherwise sizes show as 0 B.",
+                        text = "Cache size is an estimate from the system. To show approximate size per app, grant Usage Access; otherwise sizes show as \"Ready to clean\".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Accessibility is used only to tap \"Clear cache\" when you start a clean. No screen reading, no data storage, no background use.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -243,7 +248,7 @@ fun SettingsScreenContent(
                 }
             }
 
-            // Legal
+            // Support & Legal
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(Design.radiusMedium),
@@ -256,7 +261,7 @@ fun SettingsScreenContent(
                     verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
                 ) {
                     Text(
-                        text = "Legal",
+                        text = "Support & Legal",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -292,26 +297,6 @@ fun SettingsScreenContent(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-            }
-
-            // User actions
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(Design.radiusMedium),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Design.spaceStandard),
-                    verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
-                ) {
-                    Text(
-                        text = "Support",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -323,7 +308,7 @@ fun SettingsScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Rate App",
+                            text = "Rate app",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -342,7 +327,7 @@ fun SettingsScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Share App",
+                            text = "Share app",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -360,41 +345,11 @@ fun SettingsScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Contact Support",
+                            text = "Contact support",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-            }
-
-            // Transparency
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(Design.radiusMedium),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Design.spaceStandard),
-                    verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
-                ) {
-                    Text(
-                        text = "Transparency",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Privacy: Cachely does not collect personal data, analytics, or track your behavior.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Accessibility: Used only to tap \"Clear cache\" when you start a clean. No screen reading, no data storage, no background use.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                 }
             }
         }
