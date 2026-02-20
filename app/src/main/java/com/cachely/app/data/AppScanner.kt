@@ -5,13 +5,11 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Environment
 import android.os.Process
 import android.os.UserHandle
 import android.os.storage.StorageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 /**
  * Fetches installed apps and builds app list with metadata.
@@ -77,27 +75,20 @@ class AppScanner(private val context: Context) {
     /**
      * Approximate cache size via StorageStatsManager (API 26+).
      * Returns 0 when: no Usage Access, API < 26, or query throws (OEM/permission).
-     * Production: user must grant Usage Access in Settings for non-zero values.
+     * Uses StorageManager.UUID_DEFAULT for primary internal storage so we don't depend on
+     * getStorageVolume() or volume.uuid (which can be null or missing on some devices).
      */
     private fun getApproxCacheSize(packageName: String): Long {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
         return try {
             val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE)
                 as? StorageStatsManager ?: return 0L
-            val storageManager = context.getSystemService(Context.STORAGE_SERVICE)
-                as? StorageManager ?: return 0L
-            val volume = storageManager.getStorageVolume(Environment.getDataDirectory()) ?: return 0L
-            // Default internal storage often has null uuid; use StorageManager.UUID_DEFAULT (API 26+).
-            val uuid = when (val uuidStr = volume.uuid) {
-                null, "" -> StorageManager.UUID_DEFAULT
-                else -> try {
-                    UUID.fromString(uuidStr)
-                } catch (_: Exception) {
-                    StorageManager.UUID_DEFAULT
-                }
-            }
             val userHandle = UserHandle.getUserHandleForUid(Process.myUid())
-            val stats = storageStatsManager.queryStatsForPackage(uuid, packageName, userHandle)
+            val stats = storageStatsManager.queryStatsForPackage(
+                StorageManager.UUID_DEFAULT,
+                packageName,
+                userHandle
+            )
             stats.cacheBytes
         } catch (_: Exception) {
             0L
