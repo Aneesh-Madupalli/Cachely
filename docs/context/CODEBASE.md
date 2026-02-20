@@ -14,11 +14,10 @@ Quick lookup: path → purpose → do not. Use with [CONTEXT.md](CONTEXT.md). Fo
 | `data/CacheCleaner.kt` | Orchestrate clean for selected packages; progress callback; assisted vs manual | UI, node traversal, persistence, logging |
 | `data/CleaningProgress.kt` | Model: currentIndex, totalApps, currentAppName | — |
 | `data/CleaningResult.kt` | Model: totalBytesFreed, appsCleaned, appsSkipped | — |
-| `data/PreferencesRepository.kt` | DataStore: assisted preferred (Flow + set) | — |
 | `ui/HomeScreen.kt` | App list, selection toggles, Clean Selected, progress, result summary | Call system APIs, perform cleaning, handle permissions |
-| `ui/HomeViewModel.kt` | HomeUiState, startCleaning(), setAssistedEnabled() | — |
-| `ui/SettingsScreen.kt` | Toggle, Configure → Permission, transparency text | — |
-| `ui/SettingsViewModel.kt` | Load/save assisted preferred via PreferencesRepository | — |
+| `ui/HomeViewModel.kt` | HomeUiState, startCleaning(), requestCancel() | — |
+| `ui/SettingsScreen.kt` | Configure access → Permission, Configure usage access → UsageAccess, transparency, Support & Legal | — |
+| `ui/UsageAccessScreen.kt` | Explain Usage Access; Open settings / Not now (for app cache sizes) | — |
 | `ui/PermissionScreen.kt` | Explain Accessibility; Enable (opens settings) / Not now | Coercion |
 | `ui/theme/Color.kt` | Semantic colors (BackgroundDark, SurfaceDark, Accent, …) | — |
 | `ui/theme/Theme.kt` | CachelyTheme (dark Material3) | — |

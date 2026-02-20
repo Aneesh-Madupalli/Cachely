@@ -20,19 +20,18 @@ import androidx.navigation.compose.rememberNavController
 import com.cachely.app.R
 import com.cachely.app.data.AppScanner
 import com.cachely.app.data.CacheCleaner
-import com.cachely.app.data.PreferencesRepository
 import com.cachely.app.ui.HomeScreen
 import com.cachely.app.ui.HomeViewModel
 import com.cachely.app.ui.HomeViewModelFactory
 import com.cachely.app.ui.PermissionScreen
 import com.cachely.app.ui.SettingsScreen
-import com.cachely.app.ui.SettingsViewModel
-import com.cachely.app.ui.SettingsViewModelFactory
+import com.cachely.app.ui.UsageAccessScreen
 
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val PERMISSION = "permission"
+    const val USAGE_ACCESS = "usage_access"
 }
 
 @Composable
@@ -121,29 +120,30 @@ fun NavGraph() {
                 )
             }
             composable(Routes.SETTINGS) {
-                val ctx = LocalContext.current
-                val preferences = remember { PreferencesRepository(ctx.applicationContext) }
-                val settingsViewModel: SettingsViewModel = viewModel(
-                    factory = SettingsViewModelFactory(preferences)
-                )
                 SettingsScreen(
-                    viewModel = settingsViewModel,
                     onNavigateToPermission = { navController.navigate(Routes.PERMISSION) },
+                    onNavigateToUsageAccess = { navController.navigate(Routes.USAGE_ACCESS) },
                     onNavigateBack = {
-                            if (navController.previousBackStackEntry != null) {
-                                navController.popBackStack(Routes.HOME, false)
-                            } else {
-                                navController.navigate(Routes.HOME) {
-                                    popUpTo(Routes.HOME) { inclusive = true }
-                                    launchSingleTop = true
-                                }
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack(Routes.HOME, false)
+                        } else {
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(Routes.HOME) { inclusive = true }
+                                launchSingleTop = true
                             }
                         }
+                    }
                 )
             }
             composable(Routes.PERMISSION) {
                 PermissionScreen(
                     onEnable = { navController.popBackStack() },
+                    onNotNow = { navController.popBackStack() }
+                )
+            }
+            composable(Routes.USAGE_ACCESS) {
+                UsageAccessScreen(
+                    onOpenSettings = { navController.popBackStack() },
                     onNotNow = { navController.popBackStack() }
                 )
             }

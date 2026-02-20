@@ -51,6 +51,7 @@ class AppScanner(private val context: Context) {
             .filter { if (excludeSystemApps) !it.isSystemApp else true }
             // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone
             .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0 else true }
+            // Order by cache size (largest first), then name, then package for stability
             .sortedWith(
                 compareByDescending<AppCacheItem> { it.approxCacheBytes }
                     .thenBy { it.appName }

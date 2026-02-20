@@ -37,13 +37,12 @@ app/src/main/java/com/cachely/app/
 │   ├── CacheCleaner.kt     # cleanCache(selectedPackages, progress): assisted or manual
 │   ├── CleaningProgress.kt # currentIndex, totalApps, currentAppName
 │   ├── CleaningResult.kt   # totalBytesFreed, appsCleaned, appsSkipped
-│   └── PreferencesRepository.kt    # DataStore: assisted preferred
 ├── ui/
 │   ├── HomeScreen.kt       # CTA, state, result; no system APIs
-│   ├── HomeViewModel.kt    # state, startCleaning(), setAssistedEnabled()
-│   ├── SettingsScreen.kt   # Toggle, Configure, transparency
-│   ├── SettingsViewModel.kt
+│   ├── HomeViewModel.kt    # state, startCleaning(), requestCancel()
+│   ├── SettingsScreen.kt   # Configure access, Configure usage access, transparency, Support & Legal
 │   ├── PermissionScreen.kt  # Explain Accessibility, Enable / Not now
+│   ├── UsageAccessScreen.kt # Explain Usage Access, Open settings / Not now
 │   └── theme/
 │       ├── Color.kt        # BackgroundDark, SurfaceDark, Accent, etc.
 │       └── Theme.kt        # CachelyTheme (dark)
@@ -125,7 +124,7 @@ data class HomeUiState(
 | Clean flow / orchestration | `data/CacheCleaner.kt` |
 | Accessibility detection / click | `accessibility/CachelyAccessibilityService.kt`, `AccessibilityHelper.kt` |
 | Home UI / CTA / result | `ui/HomeScreen.kt`, `ui/HomeViewModel.kt` |
-| Settings / assisted toggle | `ui/SettingsScreen.kt`, `ui/SettingsViewModel.kt`, `data/PreferencesRepository.kt` |
+| Settings / Configure access, Configure usage access | `ui/SettingsScreen.kt`, `ui/UsageAccessScreen.kt` |
 | Permission explanation | `ui/PermissionScreen.kt` |
 | Navigation / routes | `navigation/NavGraph.kt` |
 | Theme / colors | `ui/theme/Color.kt`, `ui/theme/Theme.kt` |

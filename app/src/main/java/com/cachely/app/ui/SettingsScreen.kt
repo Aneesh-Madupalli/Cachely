@@ -3,7 +3,6 @@ package com.cachely.app.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,17 +16,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,16 +33,14 @@ import com.cachely.app.ui.theme.CachelyTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel,
     onNavigateToPermission: () -> Unit,
+    onNavigateToUsageAccess: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val assistedPreferred by viewModel.assistedPreferred.collectAsState(initial = false)
     SettingsScreenContent(
-        assistedPreferred = assistedPreferred,
-        onAssistedPreferredChange = { viewModel.setAssistedPreferred(it) },
         onNavigateToPermission = onNavigateToPermission,
+        onNavigateToUsageAccess = onNavigateToUsageAccess,
         onNavigateBack = onNavigateBack,
         modifier = modifier
     )
@@ -56,9 +49,8 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreenContent(
-    assistedPreferred: Boolean,
-    onAssistedPreferredChange: (Boolean) -> Unit,
     onNavigateToPermission: () -> Unit,
+    onNavigateToUsageAccess: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -143,7 +135,7 @@ fun SettingsScreenContent(
                 }
             }
 
-            // Assisted cleaning
+            // Assisted cleaning — controlled by system (Accessibility). No in-app toggle.
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(Design.radiusMedium),
@@ -161,30 +153,11 @@ fun SettingsScreenContent(
                     )
                     Spacer(modifier = Modifier.height(Design.spaceSmall))
                     Text(
-                        text = "Allows Cachely to guide cache clearing screens. You can turn this off anytime in device settings.",
+                        text = "Controlled by system Accessibility. Enable below when you want Cachely to tap \"Clear cache\" for you during a clean. You can turn it off anytime in device settings.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(Design.spaceInner))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Assisted cleaning",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Switch(
-                            checked = assistedPreferred,
-                            onCheckedChange = onAssistedPreferredChange
-                        )
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = Design.spaceSmall),
-                        color = MaterialTheme.colorScheme.surface
-                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -231,16 +204,12 @@ fun SettingsScreenContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                try {
-                                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                                } catch (_: Exception) { }
-                            }
+                            .clickable(onClick = onNavigateToUsageAccess)
                             .padding(vertical = Design.spaceSmall),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Grant Usage Access",
+                            text = "Configure usage access",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -361,9 +330,8 @@ fun SettingsScreenContent(
 private fun SettingsScreenPreview() {
     CachelyTheme {
         SettingsScreenContent(
-            assistedPreferred = true,
-            onAssistedPreferredChange = {},
             onNavigateToPermission = {},
+            onNavigateToUsageAccess = {},
             onNavigateBack = {}
         )
     }

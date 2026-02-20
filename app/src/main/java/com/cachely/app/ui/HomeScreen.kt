@@ -148,8 +148,11 @@ private fun AppRow(
                     maxLines = 1
                 )
                 Text(
-                    text = if (item.approxCacheBytes > 0L) "~${ByteFormatter.format(item.approxCacheBytes)} reclaimable"
-                    else "Ready to clean",
+                    text = if (item.approxCacheBytes > 0L) {
+                        "Cache: ~${ByteFormatter.format(item.approxCacheBytes)} reclaimable"
+                    } else {
+                        "Cache: Ready to clean"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
