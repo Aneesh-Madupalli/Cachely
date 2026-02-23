@@ -75,7 +75,7 @@ fun SettingsScreenContent(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-            TopAppBar(
+        TopAppBar(
             title = {
                 Text(
                     "Settings",
@@ -85,24 +85,24 @@ fun SettingsScreenContent(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Surface(
-                        shape = RoundedCornerShape(999.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         Row(
                             modifier = Modifier
-                                .padding(horizontal = Design.spaceSmall, vertical = Design.spaceMicro),
+                                .padding(horizontal = Design.spaceStandard, vertical = Design.spaceMicro),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
                                 text = "‹",
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Back",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = "Home",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
