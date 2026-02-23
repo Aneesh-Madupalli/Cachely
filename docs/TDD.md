@@ -257,6 +257,7 @@ Accessibility is not a marketing feature.
 - Per-app timeout  
 - Retry limit  
 - Immediate abort on user cancellation  
+- Sequential, single-app-at-a-time cleaning (no parallel automation or background batches)  
 
 ---
 
@@ -274,6 +275,7 @@ Accessibility is not a marketing feature.
 **Responsibilities:**
 
 - Own Home screen state  
+- Manage explicit, user-controlled selection of apps to clean (no auto-selection or "Select all" in v1)  
 - Trigger cleaning  
 - Handle loading and results  
 
@@ -431,12 +433,7 @@ data class HomeUiState(
 
 ## 18. Release Readiness Checklist
 
-- [ ] Accessibility explanation verified  
-- [ ] Manual fallback works  
-- [ ] No forced permissions  
-- [ ] No crashes on denial  
-- [ ] APK size validated  
-- [ ] Play Store listing matches behavior  
+For the canonical, up-to-date checklist used before Play Store submission, see `docs/RELEASE_CHECKLIST.md`.  
 
 ---
 
