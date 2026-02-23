@@ -37,13 +37,17 @@ class AppScanner(private val context: Context) {
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .map { info ->
                 val appName = info.loadLabel(pm)?.toString() ?: info.packageName
-                val isSystem = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                val isSystemFlag = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                val isUpdatedSystemApp = (info.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                // Treat only core, built-in system apps (never updated via Play Store) as "system".
+                // User-installed apps and updated system apps are considered safe to show and clean.
+                val isSystemApp = isSystemFlag && !isUpdatedSystemApp
                 val cacheBytes = if (canReadCache) getApproxCacheSize(info.packageName) else 0L
                 AppCacheItem(
                     appName = appName,
                     packageName = info.packageName,
                     approxCacheBytes = cacheBytes,
-                    isSystemApp = isSystem
+                    isSystemApp = isSystemApp
                 )
             }
             .filter { if (excludeSystemApps) !it.isSystemApp else true }

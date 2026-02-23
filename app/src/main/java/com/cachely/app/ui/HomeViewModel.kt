@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val appList: List<AppCacheItem> = emptyList(),
     val selectedPackageNames: Set<String> = emptySet(),
-    val excludeSystemApps: Boolean = false,
+    val excludeSystemApps: Boolean = true,
     val excludeZeroCache: Boolean = false,
     val isScanning: Boolean = false,
     val isCleaning: Boolean = false,
