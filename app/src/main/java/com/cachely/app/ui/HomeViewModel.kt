@@ -45,6 +45,9 @@ class HomeViewModel(
     private val _navigateToPermission = MutableStateFlow(false)
     val navigateToPermission: StateFlow<Boolean> = _navigateToPermission.asStateFlow()
 
+    private val _navigateToUsageAccess = MutableStateFlow(false)
+    val navigateToUsageAccess: StateFlow<Boolean> = _navigateToUsageAccess.asStateFlow()
+
     init {
         loadApps()
     }
@@ -77,6 +80,9 @@ class HomeViewModel(
                     isScanning = false,
                     installedAppsAvailable = list.isNotEmpty()
                 )
+            }
+            if (!hasUsage) {
+                _navigateToUsageAccess.value = true
             }
         }
     }
@@ -129,6 +135,10 @@ class HomeViewModel(
 
     fun clearNavigateToPermission() {
         _navigateToPermission.value = false
+    }
+
+    fun clearNavigateToUsageAccess() {
+        _navigateToUsageAccess.value = false
     }
 
     fun startCleaning() {

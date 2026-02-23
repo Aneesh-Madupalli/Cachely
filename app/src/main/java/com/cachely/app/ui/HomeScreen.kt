@@ -62,6 +62,7 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val navigateToPermission by viewModel.navigateToPermission.collectAsState(initial = false)
+    val navigateToUsageAccess by viewModel.navigateToUsageAccess.collectAsState(initial = false)
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -74,10 +75,10 @@ fun HomeScreen(
             viewModel.clearNavigateToPermission()
         }
     }
-
-    LaunchedEffect(state.usageAccessGranted) {
-        if (!state.usageAccessGranted) {
+    LaunchedEffect(navigateToUsageAccess) {
+        if (navigateToUsageAccess) {
             onNavigateToUsageAccess()
+            viewModel.clearNavigateToUsageAccess()
         }
     }
 

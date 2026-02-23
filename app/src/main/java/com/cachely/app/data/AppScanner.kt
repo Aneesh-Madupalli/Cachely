@@ -1,5 +1,6 @@
 package com.cachely.app.data
 
+import android.app.AppOpsManager
 import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -8,6 +9,7 @@ import android.os.Build
 import android.os.Process
 import android.os.UserHandle
 import android.os.storage.StorageManager
+import android.Manifest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -36,7 +38,7 @@ class AppScanner(private val context: Context) {
         val canReadCache = hasUsageAccess()
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .map { info ->
-                val appName = info.loadLabel(pm)?.toString() ?: info.packageName
+                val appName = info.loadLabel(pm).toString()
                 val isSystemFlag = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                 val isUpdatedSystemApp = (info.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                 // Treat only core, built-in system apps (never updated via Play Store) as "system".
@@ -65,15 +67,28 @@ class AppScanner(private val context: Context) {
     /** True if app has Usage Access (required for StorageStatsManager for other packages). */
     fun hasUsageAccess(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return false
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? android.app.AppOpsManager
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
             ?: return false
-        @Suppress("DEPRECATION")
-        val mode = appOps.checkOpNoThrow(
-            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName
-        )
-        return mode == android.app.AppOpsManager.MODE_ALLOWED
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                context.packageName
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                context.packageName
+            )
+        }
+        if (mode == AppOpsManager.MODE_ALLOWED) return true
+        if (mode == AppOpsManager.MODE_DEFAULT) {
+            return context.checkSelfPermission(Manifest.permission.PACKAGE_USAGE_STATS) ==
+                PackageManager.PERMISSION_GRANTED
+        }
+        return false
     }
 
     /**
