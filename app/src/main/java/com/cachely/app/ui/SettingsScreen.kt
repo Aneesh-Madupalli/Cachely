@@ -106,7 +106,7 @@ fun SettingsScreenContent(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Home",
+                                text = "Back",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )

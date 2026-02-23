@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.cachely.app.ui.theme.CachelyThemeMode
+import com.cachely.app.ui.theme.LocalThemeMode
 import com.cachely.app.ui.theme.CachelyTheme
 
 /**
@@ -50,22 +52,38 @@ fun UsageAccessScreen(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
+        val themeMode = LocalThemeMode.current
+        val chipColor = if (themeMode == CachelyThemeMode.DARK) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
+            color = chipColor,
             modifier = Modifier
                 .padding(vertical = Design.spaceSmall)
                 .clickable(onClick = onNotNow)
         ) {
-            Text(
-                text = "‹ Back",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+            androidx.compose.foundation.layout.Row(
                 modifier = Modifier.padding(
                     horizontal = Design.spaceStandard,
                     vertical = Design.spaceMicro
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "‹",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            )
+                Text(
+                    text = "Back",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
         Spacer(modifier = Modifier.height(Design.spaceSection))
         Text(
