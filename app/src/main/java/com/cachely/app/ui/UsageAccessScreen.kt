@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -36,6 +37,7 @@ import com.cachely.app.ui.theme.LocalThemeMode
  * Explains why Usage Access is needed (to show app cache sizes) and opens system settings.
  * Same pattern as [PermissionScreen] for Assisted cleaning.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsageAccessScreen(
     onOpenSettings: () -> Unit,
@@ -176,6 +178,7 @@ fun UsageAccessScreen(
             )
         }
     }
+}
 }
 
 @Preview(name = "Usage Access", showBackground = true)
