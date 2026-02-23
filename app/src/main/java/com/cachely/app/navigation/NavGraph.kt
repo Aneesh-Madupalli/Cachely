@@ -5,6 +5,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,8 +51,8 @@ fun NavGraph() {
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = com.cachely.app.ui.theme.SurfaceDark,
-                    contentColor = com.cachely.app.ui.theme.OnSurface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     NavigationBarItem(
                         selected = currentRoute == Routes.HOME,

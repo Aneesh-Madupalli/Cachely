@@ -124,6 +124,7 @@ fun CachelyTheme(
             window.statusBarColor = colorScheme.background.toArgb()
             val useDarkIcons = mode == CachelyThemeMode.LIGHT
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = useDarkIcons
+            window.navigationBarColor = colorScheme.background.toArgb()
         }
     }
     CompositionLocalProvider(

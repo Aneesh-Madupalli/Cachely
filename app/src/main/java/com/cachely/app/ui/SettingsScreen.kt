@@ -74,7 +74,7 @@ fun SettingsScreenContent(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        TopAppBar(
+            TopAppBar(
             title = {
                 Text(
                     "Settings",
@@ -83,7 +83,28 @@ fun SettingsScreenContent(
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Text("←", style = MaterialTheme.typography.titleMedium)
+                    Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = Design.spaceSmall, vertical = Design.spaceMicro),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "‹",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Back",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -165,16 +186,20 @@ fun SettingsScreenContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(
-                                text = "Dark mode",
+                                text = if (isDark) "Dark mode" else "Light mode",
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
                             )
                             Text(
-                                text = if (isDark) "Best for low light and OLED screens." else "Softer light background for brighter environments.",
+                                text = if (isDark) "Best for low light and OLED screens." else "Softer background for brighter environments.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2
                             )
                         }
                         Switch(

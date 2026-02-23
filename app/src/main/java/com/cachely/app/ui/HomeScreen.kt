@@ -166,7 +166,7 @@ private fun AppRow(
                 )
                 Text(
                     text = if (item.approxCacheBytes > 0L) {
-                        "Cache: ~${ByteFormatter.format(item.approxCacheBytes)} reclaimable"
+                        "Cache: ${ByteFormatter.format(item.approxCacheBytes)}"
                     } else {
                         "Cache: Ready to clean"
                     },
@@ -300,9 +300,13 @@ fun HomeScreenContent(
 
         if (state.selectedPackageNames.isNotEmpty() && !state.isCleaning) {
             val n = state.selectedPackageNames.size
-            val reclaimStr = if (selectedReclaimableBytes > 0L) " · ~${ByteFormatter.format(selectedReclaimableBytes)} reclaimable" else ""
+            val totalLabel = if (selectedReclaimableBytes > 0L) {
+                " · ${ByteFormatter.format(selectedReclaimableBytes)} total cache"
+            } else {
+                ""
+            }
             Text(
-                text = "$n app${if (n == 1) "" else "s"} selected$reclaimStr",
+                text = "$n app${if (n == 1) "" else "s"} selected$totalLabel",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = Design.spaceSmall)
