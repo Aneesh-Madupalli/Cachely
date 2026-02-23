@@ -20,6 +20,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.cachely.app.ui.theme.CachelyTheme
+import com.cachely.app.ui.theme.CachelyThemeMode
+import com.cachely.app.ui.theme.LocalSetThemeMode
+import com.cachely.app.ui.theme.LocalThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,6 +137,60 @@ fun SettingsScreenContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                }
+            }
+
+            // Appearance
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Design.radiusMedium),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                val themeMode = LocalThemeMode.current
+                val setThemeMode = LocalSetThemeMode.current
+                val isDark = themeMode == CachelyThemeMode.DARK
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Design.spaceStandard),
+                    verticalArrangement = Arrangement.spacedBy(Design.spaceSmall)
+                ) {
+                    Text(
+                        text = "Appearance",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Dark mode",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (isDark) "Best for low light and OLED screens." else "Softer light background for brighter environments.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = isDark,
+                            onCheckedChange = {
+                                val newMode = if (isDark) CachelyThemeMode.LIGHT else CachelyThemeMode.DARK
+                                setThemeMode(newMode)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surface
+                            )
+                        )
+                    }
                 }
             }
 

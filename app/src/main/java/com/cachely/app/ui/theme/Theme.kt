@@ -1,20 +1,31 @@
 package com.cachely.app.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.Typography
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+
+enum class CachelyThemeMode {
+    LIGHT,
+    DARK
+}
+
+val LocalThemeMode = staticCompositionLocalOf { CachelyThemeMode.DARK }
+val LocalSetThemeMode = staticCompositionLocalOf<(CachelyThemeMode) -> Unit> { {} }
 
 private val DarkColorScheme = darkColorScheme(
     primary = Accent,
@@ -25,6 +36,18 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = OnSurfaceVariant,
     background = BackgroundDark,
     onBackground = OnBackground,
+    error = ErrorMuted
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = Accent,
+    onPrimary = OnAccent,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceElevatedLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
     error = ErrorMuted
 )
 
@@ -85,20 +108,33 @@ private val CachelyShapes = Shapes(
 )
 
 @Composable
-fun CachelyTheme(content: @Composable () -> Unit) {
-    val colorScheme = DarkColorScheme
+fun CachelyTheme(
+    mode: CachelyThemeMode = CachelyThemeMode.DARK,
+    onModeChange: (CachelyThemeMode) -> Unit = {},
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when (mode) {
+        CachelyThemeMode.DARK -> DarkColorScheme
+        CachelyThemeMode.LIGHT -> LightColorScheme
+    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            val useDarkIcons = mode == CachelyThemeMode.LIGHT
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = useDarkIcons
         }
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = CachelyTypography,
-        shapes = CachelyShapes,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalThemeMode provides mode,
+        LocalSetThemeMode provides onModeChange
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = CachelyTypography,
+            shapes = CachelyShapes,
+            content = content
+        )
+    }
 }
