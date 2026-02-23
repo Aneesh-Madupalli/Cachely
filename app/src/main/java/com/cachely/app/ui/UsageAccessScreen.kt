@@ -2,7 +2,6 @@ package com.cachely.app.ui
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,10 +14,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,9 +28,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.cachely.app.ui.theme.CachelyTheme
 import com.cachely.app.ui.theme.CachelyThemeMode
 import com.cachely.app.ui.theme.LocalThemeMode
-import com.cachely.app.ui.theme.CachelyTheme
 
 /**
  * Explains why Usage Access is needed (to show app cache sizes) and opens system settings.
@@ -44,47 +46,60 @@ fun UsageAccessScreen(
     val scrollState = rememberScrollState()
     val padding = screenPadding()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(padding),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        val themeMode = LocalThemeMode.current
-        val chipColor = if (themeMode == CachelyThemeMode.DARK) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant
-        }
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = chipColor,
+    Column(modifier = modifier.fillMaxSize()) {
+        TopAppBar(
+            title = {
+                Text(
+                    "Usage access",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            },
+            navigationIcon = {
+                val themeMode = LocalThemeMode.current
+                val chipColor = if (themeMode == CachelyThemeMode.DARK) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+                IconButton(onClick = onNotNow) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = chipColor
+                    ) {
+                        androidx.compose.foundation.layout.Row(
+                            modifier = Modifier
+                                .padding(horizontal = Design.spaceStandard, vertical = Design.spaceMicro),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "‹",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Back",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+            )
+        )
+        Column(
             modifier = Modifier
-                .padding(vertical = Design.spaceSmall)
-                .clickable(onClick = onNotNow)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(padding),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
         ) {
-            androidx.compose.foundation.layout.Row(
-                modifier = Modifier.padding(
-                    horizontal = Design.spaceStandard,
-                    vertical = Design.spaceMicro
-                ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "‹",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Back",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
         Spacer(modifier = Modifier.height(Design.spaceSection))
         Text(
             text = "Usage Access",

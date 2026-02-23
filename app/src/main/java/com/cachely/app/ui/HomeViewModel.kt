@@ -30,6 +30,7 @@ data class HomeUiState(
     val lastCleaned: String? = null,
     val result: CleaningResult? = null,
     val accessibilityGranted: Boolean = false,
+    val usageAccessGranted: Boolean = false,
     val installedAppsAvailable: Boolean = true
 )
 
@@ -55,6 +56,7 @@ class HomeViewModel(
     fun loadApps() {
         viewModelScope.launch {
             _state.update { it.copy(isScanning = true) }
+            val hasUsage = appScanner.hasUsageAccess()
             val list = appScanner.scan(
                 excludeSystemApps = _state.value.excludeSystemApps,
                 excludeZeroCache = _state.value.excludeZeroCache
@@ -71,6 +73,7 @@ class HomeViewModel(
                 current.copy(
                     appList = list,
                     selectedPackageNames = nextSelected,
+                    usageAccessGranted = hasUsage,
                     isScanning = false,
                     installedAppsAvailable = list.isNotEmpty()
                 )

@@ -117,7 +117,8 @@ fun NavGraph() {
                 )
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onNavigateToPermission = { navController.navigate(Routes.PERMISSION) }
+                    onNavigateToPermission = { navController.navigate(Routes.PERMISSION) },
+                    onNavigateToUsageAccess = { navController.navigate(Routes.USAGE_ACCESS) }
                 )
             }
             composable(Routes.SETTINGS) {

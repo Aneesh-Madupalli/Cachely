@@ -57,6 +57,7 @@ private const val ICON_SIZE_DP = 40
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToPermission: () -> Unit,
+    onNavigateToUsageAccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
@@ -93,6 +94,7 @@ fun HomeScreen(
         onToggleSelection = { viewModel.toggleSelection(it) },
         onSelectAll = { viewModel.selectAll() },
         onClearSelection = { viewModel.clearSelection() },
+        onOpenUsageAccess = onNavigateToUsageAccess,
         modifier = modifier
     )
 }
@@ -196,6 +198,7 @@ fun HomeScreenContent(
     onToggleSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
+    onOpenUsageAccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val padding = screenPadding()
@@ -222,6 +225,34 @@ fun HomeScreenContent(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
+        }
+        if (!state.usageAccessGranted) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Design.spaceSmall),
+                shape = RoundedCornerShape(Design.radiusSmall),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Design.spaceStandard),
+                    verticalArrangement = Arrangement.spacedBy(Design.spaceMicro)
+                ) {
+                    Text(
+                        text = "Turn on Usage Access to see app cache sizes.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Enable in settings",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onOpenUsageAccess)
+                    )
+                }
+            }
         }
         Row(
             modifier = Modifier
@@ -499,13 +530,15 @@ private fun HomeScreenPreviewIdle() {
                     AppCacheItem("App One", "com.one", 1000L, false),
                     AppCacheItem("App Two", "com.two", 0L, false)
                 ),
-                accessibilityGranted = true
+                accessibilityGranted = true,
+                usageAccessGranted = true
             ),
             onCleanSelected = {},
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onOpenUsageAccess = {}
         )
     }
 }
@@ -518,13 +551,15 @@ private fun HomeScreenPreviewCleaning() {
             state = HomeUiState(
                 isCleaning = true,
                 progress = CleaningProgress(12, 50, "WhatsApp"),
-                accessibilityGranted = true
+                accessibilityGranted = true,
+                usageAccessGranted = true
             ),
             onCleanSelected = {},
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onOpenUsageAccess = {}
         )
     }
 }
@@ -537,13 +572,15 @@ private fun HomeScreenPreviewResult() {
             state = HomeUiState(
                 lastCleaned = "2 min ago",
                 result = CleaningResult(totalBytesFreed = 256_000_000L, appsCleaned = 12, appsSkipped = 2, durationSeconds = 45),
-                accessibilityGranted = true
+                accessibilityGranted = true,
+                usageAccessGranted = true
             ),
             onCleanSelected = {},
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onOpenUsageAccess = {}
         )
     }
 }
