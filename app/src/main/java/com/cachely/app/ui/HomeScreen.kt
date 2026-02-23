@@ -75,6 +75,12 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(state.usageAccessGranted) {
+        if (!state.usageAccessGranted) {
+            onNavigateToUsageAccess()
+        }
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -94,7 +100,6 @@ fun HomeScreen(
         onToggleSelection = { viewModel.toggleSelection(it) },
         onSelectAll = { viewModel.selectAll() },
         onClearSelection = { viewModel.clearSelection() },
-        onOpenUsageAccess = onNavigateToUsageAccess,
         modifier = modifier
     )
 }
@@ -198,7 +203,6 @@ fun HomeScreenContent(
     onToggleSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
-    onOpenUsageAccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val padding = screenPadding()
@@ -225,34 +229,6 @@ fun HomeScreenContent(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-        }
-        if (!state.usageAccessGranted) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = Design.spaceSmall),
-                shape = RoundedCornerShape(Design.radiusSmall),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Design.spaceStandard),
-                    verticalArrangement = Arrangement.spacedBy(Design.spaceMicro)
-                ) {
-                    Text(
-                        text = "Turn on Usage Access to see app cache sizes.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Enable in settings",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onOpenUsageAccess)
-                    )
-                }
-            }
         }
         Row(
             modifier = Modifier
@@ -537,8 +513,7 @@ private fun HomeScreenPreviewIdle() {
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {},
-            onOpenUsageAccess = {}
+            onClearSelection = {}
         )
     }
 }
@@ -558,8 +533,7 @@ private fun HomeScreenPreviewCleaning() {
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {},
-            onOpenUsageAccess = {}
+            onClearSelection = {}
         )
     }
 }
@@ -579,8 +553,7 @@ private fun HomeScreenPreviewResult() {
             onCancelCleaning = {},
             onToggleSelection = {},
             onSelectAll = {},
-            onClearSelection = {},
-            onOpenUsageAccess = {}
+            onClearSelection = {}
         )
     }
 }
