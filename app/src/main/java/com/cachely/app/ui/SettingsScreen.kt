@@ -83,10 +83,16 @@ fun SettingsScreenContent(
                 )
             },
             navigationIcon = {
+                val themeMode = LocalThemeMode.current
+                val chipColor = if (themeMode == CachelyThemeMode.DARK) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
                 IconButton(onClick = onNavigateBack) {
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant
+                        color = chipColor
                     ) {
                         Row(
                             modifier = Modifier
@@ -191,13 +197,13 @@ fun SettingsScreenContent(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = if (isDark) "Dark mode" else "Light mode",
+                                text = if (isDark) "Light mode" else "Dark mode",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1
                             )
                             Text(
-                                text = if (isDark) "Best for low light and OLED screens." else "Softer background for brighter environments.",
+                                text = if (isDark) "Softer background for brighter environments." else "Best for low light and OLED screens.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2

@@ -222,11 +222,6 @@ fun HomeScreenContent(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text(
-                text = "Free up space. Carefully.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
         Row(
             modifier = Modifier
