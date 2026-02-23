@@ -49,6 +49,23 @@ fun UsageAccessScreen(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier
+                .padding(vertical = Design.spaceSmall)
+                .clickable(onClick = onNotNow)
+        ) {
+            Text(
+                text = "‹ Back",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(
+                    horizontal = Design.spaceStandard,
+                    vertical = Design.spaceMicro
+                )
+            )
+        }
         Spacer(modifier = Modifier.height(Design.spaceSection))
         Text(
             text = "Usage Access",
