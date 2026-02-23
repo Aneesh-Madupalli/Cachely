@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var themeMode by remember { mutableStateOf(CachelyThemeMode.DARK) }
+            var themeMode by remember { mutableStateOf(CachelyThemeMode.LIGHT) }
             CachelyTheme(
                 mode = themeMode,
                 onModeChange = { themeMode = it }

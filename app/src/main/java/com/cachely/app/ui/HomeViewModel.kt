@@ -59,9 +59,18 @@ class HomeViewModel(
                 excludeSystemApps = _state.value.excludeSystemApps,
                 excludeZeroCache = _state.value.excludeZeroCache
             )
-            _state.update {
-                it.copy(
+            _state.update { current ->
+                val allPackages = list.map { it.packageName }.toSet()
+                val nextSelected = if (current.selectedPackageNames.isEmpty()) {
+                    // Default: all apps selected on first load
+                    allPackages
+                } else {
+                    // Preserve user selection where possible across refreshes
+                    current.selectedPackageNames.intersect(allPackages)
+                }
+                current.copy(
                     appList = list,
+                    selectedPackageNames = nextSelected,
                     isScanning = false,
                     installedAppsAvailable = list.isNotEmpty()
                 )

@@ -223,35 +223,6 @@ fun HomeScreenContent(
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Design.spaceSmall),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier)
-            if (state.appList.isNotEmpty() && !state.isScanning) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Design.spaceInner),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Select all",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onSelectAll)
-                    )
-                    Text(
-                        text = "Clear",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clickable(onClick = onClearSelection)
-                    )
-                }
-            }
-        }
-
         if (state.isScanning) {
             Box(
                 modifier = Modifier
@@ -306,6 +277,35 @@ fun HomeScreenContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = Design.spaceSmall)
             )
+            if (state.appList.isNotEmpty()) {
+                val allSelected = n == state.appList.size
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(Design.radiusSmall),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.clickable {
+                            if (allSelected) {
+                                onClearSelection()
+                            } else {
+                                onSelectAll()
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = if (allSelected) "Clear selection" else "Select all apps",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(
+                                horizontal = Design.spaceStandard,
+                                vertical = Design.spaceMicro
+                            )
+                        )
+                    }
+                }
+            }
         }
 
         val interactionSource = remember { MutableInteractionSource() }

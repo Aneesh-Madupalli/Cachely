@@ -121,10 +121,11 @@ fun CachelyTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
+            val barColor = colorScheme.surface.toArgb()
+            window.statusBarColor = barColor
+            window.navigationBarColor = barColor
             val useDarkIcons = mode == CachelyThemeMode.LIGHT
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = useDarkIcons
-            window.navigationBarColor = colorScheme.background.toArgb()
         }
     }
     CompositionLocalProvider(
