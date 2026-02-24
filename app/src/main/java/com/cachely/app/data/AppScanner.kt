@@ -32,30 +32,45 @@ class AppScanner(private val context: Context) {
 
     suspend fun scan(
         excludeSystemApps: Boolean = true,
-        excludeZeroCache: Boolean = false
+        excludeZeroCache: Boolean = true
     ): List<AppCacheItem> = withContext(Dispatchers.Default) {
-        val pm = context.packageManager
-        val canReadCache = hasUsageAccess()
-        val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val pm: PackageManager = context.packageManager
+        val canReadCache: Boolean = hasUsageAccess()
+        val rawApps: List<ApplicationInfo> = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+
+        val apps = rawApps
             .map { info ->
-                val appName = info.loadLabel(pm).toString()
-                val isSystemFlag = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                val isUpdatedSystemApp = (info.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-                // Treat only core, built-in system apps (never updated via Play Store) as "system".
-                // User-installed apps and updated system apps are considered safe to show and clean.
-                val isSystemApp = isSystemFlag && !isUpdatedSystemApp
-                val cacheBytes = if (canReadCache) getApproxCacheSize(info.packageName) else 0L
+                val appName: String = info.loadLabel(pm).toString()
+                val isSystemApp: Boolean = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                val isLaunchable: Boolean = pm.getLaunchIntentForPackage(info.packageName) != null
+                val isEnabled: Boolean = info.enabled
+                val cacheBytes: Long = if (canReadCache) {
+                    getApproxCacheSize(info.packageName)
+                } else {
+                    0L
+                }
+                val isCleanable: Boolean =
+                    !isSystemApp &&
+                        isLaunchable &&
+                        isEnabled &&
+                        (!canReadCache || cacheBytes > 0L)
+
                 AppCacheItem(
                     appName = appName,
                     packageName = info.packageName,
                     approxCacheBytes = cacheBytes,
-                    isSystemApp = isSystemApp
+                    isSystemApp = isSystemApp,
+                    isLaunchable = isLaunchable,
+                    isEnabled = isEnabled,
+                    isCleanable = isCleanable
                 )
             }
+            // App is eligible for cache cleaning ONLY if it is launchable and enabled.
+            .filter { it.isLaunchable && it.isEnabled }
             .filter { if (excludeSystemApps) !it.isSystemApp else true }
-            // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone
-            .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0 else true }
-            // Order by cache size (largest first), then name, then package for stability
+            // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone.
+            .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0L else true }
+            // Order by cache size (largest first), then name, then package for stability.
             .sortedWith(
                 compareByDescending<AppCacheItem> { it.approxCacheBytes }
                     .thenBy { it.appName }

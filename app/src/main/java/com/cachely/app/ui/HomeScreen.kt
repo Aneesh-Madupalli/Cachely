@@ -504,8 +504,8 @@ private fun HomeScreenPreviewIdle() {
         HomeScreenContent(
             state = HomeUiState(
                 appList = listOf(
-                    AppCacheItem("App One", "com.one", 1000L, false),
-                    AppCacheItem("App Two", "com.two", 0L, false)
+                    AppCacheItem("App One", "com.one", 1000L, false, true, true, true),
+                    AppCacheItem("App Two", "com.two", 0L, false, true, true, false)
                 ),
                 accessibilityGranted = true,
                 usageAccessGranted = true

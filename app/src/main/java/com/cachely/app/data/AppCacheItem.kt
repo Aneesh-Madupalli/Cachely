@@ -8,5 +8,8 @@ data class AppCacheItem(
     val appName: String,
     val packageName: String,
     val approxCacheBytes: Long,
-    val isSystemApp: Boolean
+    val isSystemApp: Boolean,
+    val isLaunchable: Boolean,
+    val isEnabled: Boolean,
+    val isCleanable: Boolean
 )

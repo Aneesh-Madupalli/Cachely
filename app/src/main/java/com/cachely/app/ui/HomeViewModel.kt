@@ -65,13 +65,16 @@ class HomeViewModel(
                 excludeZeroCache = _state.value.excludeZeroCache
             )
             _state.update { current ->
-                val allPackages = list.map { it.packageName }.toSet()
+                val cleanablePackages = list
+                    .filter { it.isCleanable }
+                    .map { it.packageName }
+                    .toSet()
                 val nextSelected = if (current.selectedPackageNames.isEmpty()) {
-                    // Default: all apps selected on first load
-                    allPackages
+                    // Default: select only apps that are eligible for cleaning.
+                    cleanablePackages
                 } else {
-                    // Preserve user selection where possible across refreshes
-                    current.selectedPackageNames.intersect(allPackages)
+                    // Preserve user selection where possible across refreshes, but constrain to cleanable apps.
+                    current.selectedPackageNames.intersect(cleanablePackages)
                 }
                 current.copy(
                     appList = list,
@@ -143,8 +146,10 @@ class HomeViewModel(
 
     fun startCleaning() {
         val state = _state.value
-        val selected = state.selectedPackageNames.toList()
-        if (selected.isEmpty()) return
+        val cleanableSelected = state.appList
+            .filter { it.packageName in state.selectedPackageNames && it.isCleanable }
+            .map { it.packageName }
+        if (cleanableSelected.isEmpty()) return
         val nameResolver: (String) -> String = { pkg ->
             state.appList.find { it.packageName == pkg }?.appName ?: pkg
         }
@@ -153,7 +158,7 @@ class HomeViewModel(
                 it.copy(isCleaning = true, result = null, progress = null, cancelRequested = false)
             }
             val result = cacheCleaner.cleanCache(
-                selectedPackages = selected,
+                selectedPackages = cleanableSelected,
                 appNameResolver = nameResolver,
                 onProgress = { progress ->
                     withContext(Dispatchers.Main.immediate) {
