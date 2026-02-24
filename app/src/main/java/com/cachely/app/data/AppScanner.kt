@@ -91,6 +91,7 @@ class AppScanner(private val context: Context) {
         return false
     }
 
+
     /**
      * Approximate cache size via StorageStatsManager (API 26+).
      * Returns 0 when: no Usage Access, API < 26, or query throws (OEM/permission).
