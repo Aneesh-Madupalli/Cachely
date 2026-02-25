@@ -23,10 +23,7 @@ class CachelyAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
-        if (
-            !packageName.contains("settings", ignoreCase = true) &&
-            !packageName.contains("permission", ignoreCase = true)
-        ) return
+        if (SETTINGS_PACKAGE_HINTS.none { hint -> packageName.contains(hint, ignoreCase = true) }) return
         if (!CleanCoordinator.isSessionActive()) return
         val root = event.source ?: rootInActiveWindow ?: return
         try {
@@ -216,5 +213,10 @@ class CachelyAccessibilityService : AccessibilityService() {
     companion object {
         /** Delay after clicking "Clear cache" before going back (let UI update). */
         private const val CLEAR_CACHE_SETTLE_MS = 450L
+        private val SETTINGS_PACKAGE_HINTS = listOf(
+            "settings",
+            "permission",
+            "securitycenter"
+        )
     }
 }
