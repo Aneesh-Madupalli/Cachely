@@ -14,6 +14,7 @@ private const val PER_APP_TIMEOUT_MS = 3_500L
 /** Delay between finishing one app and opening the next so back animation and state settle. */
 private const val BETWEEN_APPS_DELAY_MS = 400L
 private const val MAX_RETRIES_PER_APP = 0
+private const val ENABLE_SKIP_STUCK_APPS = true
 
 /**
  * Single orchestration point for all cache cleaning operations.
@@ -23,6 +24,7 @@ private const val MAX_RETRIES_PER_APP = 0
 class CacheCleaner(private val context: Context) {
 
     private val accessibilityHelper = AccessibilityHelper(context)
+    private val debugSkippedPackages: MutableSet<String> = mutableSetOf()
 
     /**
      * @param selectedPackages Package names to clean (user-selected).
@@ -60,6 +62,14 @@ class CacheCleaner(private val context: Context) {
             val total = packages.size
             var cancelledByUser = false
             for ((index, pkg) in packages.withIndex()) {
+                if (ENABLE_SKIP_STUCK_APPS && debugSkippedPackages.contains(pkg)) {
+                    skipped++
+                    if (index < packages.size - 1) {
+                        delay(BETWEEN_APPS_DELAY_MS)
+                    }
+                    CleanCoordinator.touchSession()
+                    continue
+                }
                 if (isCancelled()) {
                     cancelledByUser = true
                     break
@@ -88,6 +98,9 @@ class CacheCleaner(private val context: Context) {
                     }
                 }
                 if (cleared) cleaned++ else skipped++
+                if (!cleared && ENABLE_SKIP_STUCK_APPS) {
+                    debugSkippedPackages.add(pkg)
+                }
                 if (index < packages.size - 1) delay(BETWEEN_APPS_DELAY_MS)
                 CleanCoordinator.touchSession()
             }
