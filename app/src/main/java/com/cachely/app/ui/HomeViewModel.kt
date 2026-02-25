@@ -65,16 +65,15 @@ class HomeViewModel(
                 excludeZeroCache = _state.value.excludeZeroCache
             )
             _state.update { current ->
-                val cleanablePackages = list
-                    .filter { it.isCleanable }
+                val allPackages = list
                     .map { it.packageName }
                     .toSet()
                 val nextSelected = if (current.selectedPackageNames.isEmpty()) {
-                    // Default: select only apps that are eligible for cleaning.
-                    cleanablePackages
+                    // Default: select all visible apps for cache cleaning.
+                    allPackages
                 } else {
-                    // Preserve user selection where possible across refreshes, but constrain to cleanable apps.
-                    current.selectedPackageNames.intersect(cleanablePackages)
+                    // Preserve user selection where possible across refreshes.
+                    current.selectedPackageNames.intersect(allPackages)
                 }
                 current.copy(
                     appList = list,
