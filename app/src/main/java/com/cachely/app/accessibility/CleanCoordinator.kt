@@ -30,7 +30,7 @@ object CleanCoordinator {
 
     private const val SESSION_MAX_AGE_MS = 5 * 60 * 1000L // 5 minutes
 
-    private val clearedChannel = Channel<Unit>(1)
+    private val clearedChannel = Channel<Boolean>(1)
     private val sessionIdRef = AtomicReference<UUID?>(null)
     private val sessionStartedAtMs = AtomicLong(0L)
     private val phaseRef = AtomicReference(CleaningPhase.EXPECT_STORAGE)
@@ -105,7 +105,13 @@ object CleanCoordinator {
         if (bytesCleared > 0L) totalBytesClearedRef.addAndGet(bytesCleared)
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
         skipStorageClicksRef.set(1)
-        clearedChannel.trySend(Unit)
+        clearedChannel.trySend(true)
+    }
+
+    fun notifySkipped() {
+        phaseRef.set(CleaningPhase.EXPECT_STORAGE)
+        skipStorageClicksRef.set(1)
+        clearedChannel.trySend(false)
     }
 
     /**
@@ -116,11 +122,10 @@ object CleanCoordinator {
         return skipStorageClicksRef.getAndUpdate { if (it > 0) it - 1 else 0 } > 0
     }
 
-    /** Suspend until cleared or timeout. Returns true if cleared, false if timeout. */
+    /** Suspend until cleared or timeout. Returns true if cleared, false if skipped or timeout. */
     suspend fun awaitCleared(timeoutMs: Long): Boolean {
         return withTimeoutOrNull(timeoutMs) {
             clearedChannel.receive()
-            true
         } ?: false
     }
 }

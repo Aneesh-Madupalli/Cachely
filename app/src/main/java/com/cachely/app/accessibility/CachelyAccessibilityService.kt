@@ -34,6 +34,9 @@ class CachelyAccessibilityService : AccessibilityService() {
                             performGlobalAction(GLOBAL_ACTION_BACK)
                             CleanCoordinator.notifyCleared(bytesCleared)
                         }, CLEAR_CACHE_SETTLE_MS)
+                    } else {
+                        performGlobalAction(GLOBAL_ACTION_BACK)
+                        CleanCoordinator.notifySkipped()
                     }
                     return
                 }
