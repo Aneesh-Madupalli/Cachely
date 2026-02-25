@@ -22,7 +22,11 @@ class CachelyAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        if (event.packageName?.toString() != "com.android.settings") return
+        val packageName = event.packageName?.toString() ?: return
+        if (
+            !packageName.contains("settings", ignoreCase = true) &&
+            !packageName.contains("permission", ignoreCase = true)
+        ) return
         if (!CleanCoordinator.isSessionActive()) return
         val root = event.source ?: rootInActiveWindow ?: return
         try {

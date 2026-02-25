@@ -3,7 +3,6 @@ package com.cachely.app.accessibility
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -28,7 +27,7 @@ object CleanCoordinator {
         EXPECT_CLEAR_CACHE
     }
 
-    private const val SESSION_MAX_AGE_MS = 5 * 60 * 1000L // 5 minutes
+    private const val SESSION_MAX_AGE_MS = 5 * 60 * 1000L // 5 minutes of inactivity
 
     private val clearedChannel = Channel<Unit>(1)
     private val sessionIdRef = AtomicReference<UUID?>(null)
@@ -60,6 +59,16 @@ object CleanCoordinator {
         totalBytesClearedRef.set(0L)
     }
 
+    /**
+     * Refresh the session start timestamp to keep the session alive while automation is
+     * actively progressing. No effect when there is no active session.
+     */
+    fun touchSession() {
+        if (sessionIdRef.get() != null) {
+            sessionStartedAtMs.set(System.currentTimeMillis())
+        }
+    }
+
     /** Add bytes cleared (from extracted Storage screen value). Called before notifyCleared. */
     fun addBytesCleared(bytes: Long) {
         if (bytes > 0L) totalBytesClearedRef.addAndGet(bytes)
@@ -71,16 +80,14 @@ object CleanCoordinator {
     /**
      * True only while a session is active and not expired.
      * AccessibilityService must check this before performing any automation.
+     *
+     * This function is intentionally side-effect free; it does not modify session state.
      */
     fun isSessionActive(): Boolean {
-        val id = sessionIdRef.get() ?: return false
         val started = sessionStartedAtMs.get()
+        if (sessionIdRef.get() == null) return false
         if (started == 0L) return false
-        if (System.currentTimeMillis() - started > SESSION_MAX_AGE_MS) {
-            endSession()
-            return false
-        }
-        return true
+        return System.currentTimeMillis() - started <= SESSION_MAX_AGE_MS
     }
 
     /** Current phase for state-gated automation. */

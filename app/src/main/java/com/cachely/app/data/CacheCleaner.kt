@@ -10,10 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-private const val PER_APP_TIMEOUT_MS = 7_000L
+private const val PER_APP_TIMEOUT_MS = 3_500L
 /** Delay between finishing one app and opening the next so back animation and state settle. */
 private const val BETWEEN_APPS_DELAY_MS = 400L
-private const val MAX_RETRIES_PER_APP = 1
+private const val MAX_RETRIES_PER_APP = 0
 
 /**
  * Single orchestration point for all cache cleaning operations.
@@ -58,8 +58,12 @@ class CacheCleaner(private val context: Context) {
             var cleaned = 0
             var skipped = 0
             val total = packages.size
+            var cancelledByUser = false
             for ((index, pkg) in packages.withIndex()) {
-                if (isCancelled()) break
+                if (isCancelled()) {
+                    cancelledByUser = true
+                    break
+                }
                 if (!CleanCoordinator.isSessionActive()) break
                 onProgress?.invoke(
                     CleaningProgress(
@@ -73,22 +77,22 @@ class CacheCleaner(private val context: Context) {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 var cleared = false
-                var attempts = 0
-                while (attempts <= MAX_RETRIES_PER_APP && !cleared) {
+                repeat(MAX_RETRIES_PER_APP + 1) { attempt ->
+                    if (cleared) return@repeat
                     try {
                         withContext(Dispatchers.Main.immediate) { context.startActivity(intent) }
                         cleared = CleanCoordinator.awaitCleared(PER_APP_TIMEOUT_MS)
                     } catch (_: Exception) { }
-                    if (!cleared && attempts < MAX_RETRIES_PER_APP) {
+                    if (!cleared && attempt < MAX_RETRIES_PER_APP) {
                         delay(BETWEEN_APPS_DELAY_MS)
-                        attempts++
-                    } else break
+                    }
                 }
                 if (cleared) cleaned++ else skipped++
                 if (index < packages.size - 1) delay(BETWEEN_APPS_DELAY_MS)
+                CleanCoordinator.touchSession()
             }
-            if (cleaned + skipped == packages.size) {
-                finishCleaningSession() // return to Cachely, end automation
+            if (!cancelledByUser) {
+                finishCleaningSession()
             }
             val durationSeconds = ((System.currentTimeMillis() - startTimeMs) / 1000).toInt()
             CleaningResult(
@@ -108,7 +112,6 @@ class CacheCleaner(private val context: Context) {
      * Must be called from a coroutine (uses Main for startActivity).
      */
     private suspend fun finishCleaningSession() {
-        CleanCoordinator.endSession()
         withContext(Dispatchers.Main.immediate) {
             try {
                 val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
