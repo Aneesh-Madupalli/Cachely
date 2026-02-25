@@ -89,12 +89,13 @@ jobs:
   #         [ "${TEST_EXIT:-0}" != "0" ] && REASON="${REASON}• Unit tests failed"$'\n'
   #         [ -z "$REASON" ] && REASON="• Quality gate failed (see log)"$'\n'
   #         SHORT_SHA="${GITHUB_SHA:0:7}"
+  #         COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
   #         LOG_TAIL=""
   #         if [ -f quality.log ] && [ -s quality.log ]; then
   #           LOG_TAIL=$'\n\n''```'$'\n'"$(tail -n 25 quality.log | sed 's/`/'"'"'/g')"$'\n''```'
   #         fi
   #         TEXT="❌ *Cachely quality gate failed*
-  #         *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *By:* ${{ github.actor }}
+  #         *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *Message:* ${COMMIT_MESSAGE} *By:* ${{ github.actor }}
   #
   #         *Failed:* ${REASON}
   #         [View run](${RUN_URL})${LOG_TAIL}"
@@ -111,7 +112,9 @@ jobs:
   #         echo "- **Lint:** \`:app:lintDebug\`" >> $GITHUB_STEP_SUMMARY
   #         echo "- **Unit tests:** \`:app:testDebugUnitTest\`" >> $GITHUB_STEP_SUMMARY
   #         echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+  #         COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
   #         echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Commit message:** ${COMMIT_MESSAGE}" >> $GITHUB_STEP_SUMMARY
   #         if [ "${{ job.status }}" = "failure" ]; then
   #           echo "" >> $GITHUB_STEP_SUMMARY
   #           echo "### ❌ Quality gate failed" >> $GITHUB_STEP_SUMMARY
@@ -192,9 +195,11 @@ jobs:
           QUALITY_SUMMARY: "Quality gate not run (job disabled)"
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
           CAPTION="Cachely release APK (signed) — Build #${{ github.run_number }}
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
+          Commit message: ${COMMIT_MESSAGE}
           Quality: ${QUALITY_SUMMARY}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
@@ -211,9 +216,11 @@ jobs:
           QUALITY_SUMMARY: "Quality gate not run (job disabled)"
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
           CAPTION="Cachely debug APK — Build #${{ github.run_number }}
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
+          Commit message: ${COMMIT_MESSAGE}
           Quality: ${QUALITY_SUMMARY}
           Run: ${RUN_URL}"
           curl -sS -F "chat_id=${TG_CHAT_ID}" \
@@ -235,12 +242,13 @@ jobs:
             exit 0
           fi
           SHORT_SHA="${GITHUB_SHA:0:7}"
+          COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
           LOG_TAIL=""
           if [ -f build.log ] && [ -s build.log ]; then
             LOG_TAIL=$'\n\n''```'$'\n'"$(tail -n 25 build.log | sed 's/`/'"'"'/g')"$'\n''```'
           fi
           TEXT="❌ *Cachely build failed*
-          *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *By:* ${{ github.actor }}
+          *Run:* #${{ github.run_number }} *Branch:* \`${{ github.ref_name }}\` *Commit:* \`${SHORT_SHA}\` *Message:* ${COMMIT_MESSAGE} *By:* ${{ github.actor }}
 
           [View run](${RUN_URL})${LOG_TAIL}"
           curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
@@ -262,7 +270,9 @@ jobs:
             echo "- **Artifact:** \`app-debug-apk\`" >> $GITHUB_STEP_SUMMARY
           fi
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          COMMIT_MESSAGE="$(git log -1 --pretty=%s 2>/dev/null || echo 'n/a')"
           echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit message:** ${COMMIT_MESSAGE}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" = "failure" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### ❌ Build failed" >> $GITHUB_STEP_SUMMARY
