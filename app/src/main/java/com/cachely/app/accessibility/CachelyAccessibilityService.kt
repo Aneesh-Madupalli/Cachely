@@ -31,17 +31,12 @@ class CachelyAccessibilityService : AccessibilityService() {
                     val bytesCleared = extractCacheSizeFromStorageScreen(root)
                     if (findAndClickClearCache(root)) {
                         handler.postDelayed({
-                            performGlobalAction(GLOBAL_ACTION_BACK)
                             CleanCoordinator.notifyCleared(bytesCleared)
                         }, CLEAR_CACHE_SETTLE_MS)
-                    } else {
-                        performGlobalAction(GLOBAL_ACTION_BACK)
-                        CleanCoordinator.notifySkipped()
                     }
                     return
                 }
                 CleanCoordinator.CleaningPhase.EXPECT_STORAGE -> {
-                    if (CleanCoordinator.consumeSkipStorageClick()) return
                     if (findAndClickStorage(root)) {
                         CleanCoordinator.setPhaseExpectClearCache()
                     }

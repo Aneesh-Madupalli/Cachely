@@ -10,10 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-private const val PER_APP_TIMEOUT_MS = 5_000L
+private const val PER_APP_TIMEOUT_MS = 7_000L
 /** Delay between finishing one app and opening the next so back animation and state settle. */
 private const val BETWEEN_APPS_DELAY_MS = 400L
-private const val MAX_RETRIES_PER_APP = 0
+private const val MAX_RETRIES_PER_APP = 1
 
 /**
  * Single orchestration point for all cache cleaning operations.

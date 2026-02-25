@@ -30,12 +30,10 @@ object CleanCoordinator {
 
     private const val SESSION_MAX_AGE_MS = 5 * 60 * 1000L // 5 minutes
 
-    private val clearedChannel = Channel<Boolean>(1)
+    private val clearedChannel = Channel<Unit>(1)
     private val sessionIdRef = AtomicReference<UUID?>(null)
     private val sessionStartedAtMs = AtomicLong(0L)
     private val phaseRef = AtomicReference(CleaningPhase.EXPECT_STORAGE)
-    /** After notifyCleared we see "back to App Info" once; skip one Storage click so we don't reopen same app. */
-    private val skipStorageClicksRef = AtomicInteger(0)
     /** Sum of cache bytes extracted from Storage screens before clearing (real values only). */
     private val totalBytesClearedRef = AtomicLong(0L)
 
@@ -47,7 +45,6 @@ object CleanCoordinator {
         sessionIdRef.set(UUID.randomUUID())
         sessionStartedAtMs.set(System.currentTimeMillis())
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
-        skipStorageClicksRef.set(0)
         totalBytesClearedRef.set(0L)
         while (clearedChannel.tryReceive().isSuccess) { /* drain stale */ }
     }
@@ -60,7 +57,6 @@ object CleanCoordinator {
         sessionIdRef.set(null)
         sessionStartedAtMs.set(0L)
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
-        skipStorageClicksRef.set(0)
         totalBytesClearedRef.set(0L)
     }
 
@@ -104,28 +100,14 @@ object CleanCoordinator {
     fun notifyCleared(bytesCleared: Long = 0L) {
         if (bytesCleared > 0L) totalBytesClearedRef.addAndGet(bytesCleared)
         phaseRef.set(CleaningPhase.EXPECT_STORAGE)
-        skipStorageClicksRef.set(1)
-        clearedChannel.trySend(true)
+        clearedChannel.trySend(Unit)
     }
 
-    fun notifySkipped() {
-        phaseRef.set(CleaningPhase.EXPECT_STORAGE)
-        skipStorageClicksRef.set(1)
-        clearedChannel.trySend(false)
-    }
-
-    /**
-     * If we should skip the next "Storage" click (we're on back-to-App-Info of the app we just cleared), consume and return true.
-     * Otherwise return false.
-     */
-    fun consumeSkipStorageClick(): Boolean {
-        return skipStorageClicksRef.getAndUpdate { if (it > 0) it - 1 else 0 } > 0
-    }
-
-    /** Suspend until cleared or timeout. Returns true if cleared, false if skipped or timeout. */
+    /** Suspend until cleared or timeout. Returns true if cleared, false if timeout. */
     suspend fun awaitCleared(timeoutMs: Long): Boolean {
         return withTimeoutOrNull(timeoutMs) {
             clearedChannel.receive()
+            true
         } ?: false
     }
 }
