@@ -96,7 +96,7 @@ fun HomeScreen(
 
     HomeScreenContent(
         state = state,
-        onCleanSelected = { viewModel.onCleanSelected(context) },
+        onCleanSelected = { viewModel.onCleanSelected() },
         onCancelCleaning = { viewModel.requestCancel() },
         onToggleSelection = { viewModel.toggleSelection(it) },
         onSelectAll = { viewModel.selectAll() },

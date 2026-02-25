@@ -3,7 +3,6 @@ package com.cachely.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.cachely.app.accessibility.AccessibilityHelper
 import com.cachely.app.data.AppCacheItem
 import com.cachely.app.data.AppScanner
 import com.cachely.app.data.CacheCleaner
@@ -123,10 +122,10 @@ class HomeViewModel(
     }
 
     /** User tapped "Clean Selected". Permission gate: if not granted, navigate to permission; else start cleaning. */
-    fun onCleanSelected(context: android.content.Context) {
+    fun onCleanSelected() {
         val state = _state.value
         if (state.selectedPackageNames.isEmpty()) return
-        val granted = AccessibilityHelper(context).isAccessibilityServiceEnabled()
+        val granted = cacheCleaner.isAccessibilityEnabled()
         _state.update { it.copy(accessibilityGranted = granted) }
         if (!granted) {
             _navigateToPermission.value = true

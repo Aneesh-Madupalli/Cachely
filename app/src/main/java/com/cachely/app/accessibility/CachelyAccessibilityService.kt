@@ -70,15 +70,19 @@ class CachelyAccessibilityService : AccessibilityService() {
             if (bytes > 0L) return bytes
             if (text.equals("Cache", ignoreCase = true)) {
                 val parent = node.parent ?: return 0L
-                for (i in 0 until parent.childCount) {
-                    val child = parent.getChild(i) ?: continue
-                    try {
-                        val childText = child.text?.toString()?.trim() ?: continue
-                        val b = parseSizeToBytes(childText)
-                        if (b > 0L) return b
-                    } finally {
-                        child.recycle()
+                try {
+                    for (i in 0 until parent.childCount) {
+                        val child = parent.getChild(i) ?: continue
+                        try {
+                            val childText = child.text?.toString()?.trim() ?: continue
+                            val b = parseSizeToBytes(childText)
+                            if (b > 0L) return b
+                        } finally {
+                            child.recycle()
+                        }
                     }
+                } finally {
+                    parent.recycle()
                 }
             }
         }
@@ -120,10 +124,15 @@ class CachelyAccessibilityService : AccessibilityService() {
             val nodes = root.findAccessibilityNodeInfosByText(text)
             for (node in nodes) {
                 try {
-                    val toClick = findClickable(node) ?: continue
-                    val clicked = toClick.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    toClick.recycle()
-                    if (clicked) return true
+                    val toClick = findClickable(node)
+                    if (toClick != null) {
+                        val clicked = toClick.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        toClick.recycle()
+                        if (clicked) {
+                            node.recycle()
+                            return true
+                        }
+                    }
                 } catch (_: Exception) { }
                 node.recycle()
             }
@@ -147,10 +156,15 @@ class CachelyAccessibilityService : AccessibilityService() {
             val nodes = root.findAccessibilityNodeInfosByText(text)
             for (node in nodes) {
                 try {
-                    val toClick = findClickable(node) ?: continue
-                    val clicked = toClick.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    toClick.recycle()
-                    if (clicked) return true
+                    val toClick = findClickable(node)
+                    if (toClick != null) {
+                        val clicked = toClick.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        toClick.recycle()
+                        if (clicked) {
+                            node.recycle()
+                            return true
+                        }
+                    }
                 } catch (_: Exception) { }
                 node.recycle()
             }
