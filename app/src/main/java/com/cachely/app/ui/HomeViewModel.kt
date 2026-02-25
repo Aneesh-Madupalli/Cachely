@@ -57,8 +57,21 @@ class HomeViewModel(
 
     fun loadApps() {
         viewModelScope.launch {
-            _state.update { it.copy(isScanning = true) }
             val hasUsage = appScanner.hasUsageAccess()
+            if (!hasUsage) {
+                _state.update {
+                    it.copy(
+                        usageAccessGranted = false,
+                        isScanning = false,
+                        appList = emptyList(),
+                        selectedPackageNames = emptySet(),
+                        installedAppsAvailable = false
+                    )
+                }
+                _navigateToUsageAccess.value = true
+                return@launch
+            }
+            _state.update { it.copy(isScanning = true, usageAccessGranted = true) }
             val list = appScanner.scan(
                 excludeSystemApps = _state.value.excludeSystemApps,
                 excludeZeroCache = _state.value.excludeZeroCache
@@ -77,13 +90,9 @@ class HomeViewModel(
                 current.copy(
                     appList = list,
                     selectedPackageNames = nextSelected,
-                    usageAccessGranted = hasUsage,
                     isScanning = false,
                     installedAppsAvailable = list.isNotEmpty()
                 )
-            }
-            if (!hasUsage) {
-                _navigateToUsageAccess.value = true
             }
         }
     }

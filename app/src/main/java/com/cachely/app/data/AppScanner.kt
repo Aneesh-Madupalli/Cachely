@@ -35,7 +35,6 @@ class AppScanner(private val context: Context) {
         excludeZeroCache: Boolean = true
     ): List<AppCacheItem> = withContext(Dispatchers.Default) {
         val pm: PackageManager = context.packageManager
-        val canReadCache: Boolean = hasUsageAccess()
         val rawApps: List<ApplicationInfo> = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
         val apps = rawApps
@@ -44,16 +43,12 @@ class AppScanner(private val context: Context) {
                 val isSystemApp: Boolean = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                 val isLaunchable: Boolean = pm.getLaunchIntentForPackage(info.packageName) != null
                 val isEnabled: Boolean = info.enabled
-                val cacheBytes: Long = if (canReadCache) {
-                    getApproxCacheSize(info.packageName)
-                } else {
-                    0L
-                }
+                val cacheBytes: Long = getApproxCacheSize(info.packageName)
                 val isCleanable: Boolean =
                     !isSystemApp &&
                         isLaunchable &&
                         isEnabled &&
-                        (!canReadCache || cacheBytes > 0L)
+                        cacheBytes > 0L
 
                 AppCacheItem(
                     appName = appName,
@@ -68,8 +63,7 @@ class AppScanner(private val context: Context) {
             // App is eligible for cache cleaning ONLY if it is launchable and enabled.
             .filter { it.isLaunchable && it.isEnabled }
             .filter { if (excludeSystemApps) !it.isSystemApp else true }
-            // Only filter zero-cache when we can read cache; otherwise all are 0 and we'd remove everyone.
-            .filter { if (excludeZeroCache && canReadCache) it.approxCacheBytes > 0L else true }
+            .filter { if (excludeZeroCache) it.approxCacheBytes > 0L else true }
             // Order by cache size (largest first), then name, then package for stability.
             .sortedWith(
                 compareByDescending<AppCacheItem> { it.approxCacheBytes }
